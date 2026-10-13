@@ -1,0 +1,61 @@
+                    {% if fname|length == 2 %}{{ fname[0] }}　{{ fname[1] }}{% else %}{{ fname }}{% endif %}
+                </div>
+
+                <div style="position:absolute; top:18px; left:215px; width:68px; height:68px; border:1.5px solid #cce0ff;">
+                    <img src="/static/uniform.jpeg" style="width:100%; height:100%; object-fit:contain;">
+                </div>
+                <div style="position:absolute; top:18px; left:283px; width:65px; height:68px; border:1.5px solid #cce0ff; display:flex; align-items:center; justify-content:center; font-size:2.3rem; font-weight:bold; color:#000;">
+                    {{ player['number'] }}
+                </div>
+                
+                <div style="position:absolute; top:18px; left:360px; width:170px; height:150px; border:1.5px solid #cce0ff; background:#eee;">
+                    <img src="{{ url_for('static', filename=player.get('image_path', 'default.png')) }}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                
+                <div class="pc-ability-item" style="top:95px; left:18px; width:330px; height:58px; background:#fff; color:#000;">
+                    <div class="pc-label-box pc-label-pos" style="left:8px; width:100px;">守備位置</div>
+                    <span style="margin-left:115px; font-size:2.4rem; font-weight:bold;">{{ player['pos1'] }}</span>
+                    <span style="font-size:2.0rem; font-weight:bold;">
+                        {% if player['pos2'] %}　{{ player['pos2'] }}{% endif %}
+                        {% if player['pos3'] %}　{{ player['pos3'] }}{% endif %}
+                    </span>
+                </div>
+
+                <div class="pc-info-panel" style="top:18px; color:#000;">
+                    <div class="pc-label-box" style="position:static; width:80px; height:50px; flex-shrink:0;">成 績</div>
+                    <span>率{{ format_avg(annual_h, annual_ab) }}　{{ annual_hr }}本　{{ annual_rbi }}点　{{ annual_sb }}盗</span>
+                </div>
+
+                <div class="pc-info-panel stats-small" style="top:98px; color:#000;">
+                    <div class="pc-label-box" style="position:static; width:60px; height:40px; flex-shrink:0;">性 格</div>
+                    <span style="margin-right: 1em;">{{ player.get('character', 'ふつう') }}</span>
+                    <div class="pc-label-box" style="position:static; width:60px; height:40px; flex-shrink:0;">投 打</div>
+                    <span>{{ player.get('pitch_bat', '右投右打') }}</span>
+                </div>
+
+                <div class="pc-ability-item" style="top:165px; left:18px; width:330px; height:70px;">
+                    <div class="pc-label-box" style="left:8px; width:100px; color:#000;">弾　道</div>
+                    <span style="margin-left:120px; color:orange; font-size:2.0rem; font-weight:900;">★{{ player.get('dan', 2) }}</span>
+                </div>
+                {% for attr, label, key in [('meet', 'ミート', 'meet_val'), ('power', 'パワー', 'power_val'), ('speed', '走力', 'speed_val'), ('arm', '肩力', 'arm_val'), ('defense', '守備力', 'defense_val'), ('catching', '捕球', 'catch_val')] %}
+                <div class="pc-ability-item" style="top:{{ 245 + (loop.index0 * 80) }}px; left:18px; width:330px; height:70px;">
+                    <div class="pc-label-box" style="left:8px; width:100px; color:#000;">{{ label }}</div>
+                    <span class="pc-rank-shadow rank-{{ attr }}" style="flex-grow:1; text-align:center; font-weight:bold;">-</span>
+                    <span class="val-display-{{ attr }}" style="padding-right:20px; font-weight:bold; font-size:2.2rem; color:#000;">{{ player.get(key, 50) }}</span>
+                </div>
+                {% endfor %}
+
+                <div class="pc-special-ability-grid-container">
+                    <div class="pc-spec-grid">
+                        <div class="pc-spec-item"><span>チャンス</span><span class="pc-rank-shadow rank-{{ player.get('chance_rank', 'D') }}">{{ player.get('chance_rank', 'D') }}</span></div>
+                        <div class="pc-spec-item"><span>対左投手</span><span class="pc-rank-shadow rank-{{ player.get('left_rank', 'D') }}">{{ player.get('left_rank', 'D') }}</span></div>
+                        <div class="pc-spec-item"><span>ｹｶﾞしにくさ</span><span class="pc-rank-shadow rank-{{ player.get('injury', 'D') }}">{{ player.get('injury', 'D') }}</span></div>
+                        <div class="pc-spec-item"><span>盗　塁</span><span class="pc-rank-shadow rank-{{ player.get('steal_rank', 'D') }}">{{ player.get('steal_rank', 'D') }}</span></div>
+                        <div class="pc-spec-item"><span>走　塁</span><span class="pc-rank-shadow rank-{{ player.get('run_rank', 'D') }}">{{ player.get('run_rank', 'D') }}</span></div>
+                        <div class="pc-spec-item"><span>送　球</span><span class="pc-rank-shadow rank-{{ player.get('throw', 'D') }}">{{ player.get('throw', 'D') }}</span></div>
+                        <div class="pc-spec-item" style="background:#f9fafb;"></div>
+                        <div class="pc-spec-item"><span>回　復</span><span class="pc-rank-shadow rank-{{ player.get('recovery', 'D') }}">{{ player.get('recovery', 'D') }}</span></div>
+                    </div>
+
+                    <div class="pc-spec-grid" style="grid-template-rows: repeat(6, 50px);">
+

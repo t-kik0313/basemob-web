@@ -1,0 +1,69 @@
+
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <a href="{{ url_for('player_detail_R1', player_id=player.id) }}" class="btn-back">◀ 選手詳細へ戻る</a>
+        </div>
+        
+        <div class="header-section">
+            <div class="title-area">
+                <h2>{{ player['name'] }}</h2>
+            </div>
+
+            <!-- ★ ページ上部の成績まとめ表（復活！） -->
+            <div class="summary-wrapper">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="col-label" style="border-top: none; border-left: none; background: #fff;"></th>
+                            <th rowspan="2" class="bg-pull">引張</th>
+                            <th rowspan="2" class="bg-pull">流し</th>
+                            <th rowspan="2" class="bg-runner">無走者</th>
+                            <th rowspan="2" class="bg-runner">満塁</th>
+                            <th rowspan="2" class="bg-runner">得点圏</th>
+                            <th rowspan="2" class="bg-runner">非得点圏</th>
+                            <th rowspan="2" class="bg-runner">得-通常</th>
+                            <th rowspan="2" class="bg-strike">0スト</th>
+                            <th rowspan="2" class="bg-strike">2スト</th>
+                            <th rowspan="2" class="bg-off">公式戦</th>
+                            <th rowspan="2" class="bg-left">対左</th>
+                            <th rowspan="2" class="bg-left">左-通常</th>
+                            <th rowspan="2" class="bg-4th">4番</th>
+                            <th rowspan="2" style="background-color: #ffd966;">複数安打</th>
+                            <th colspan="5" style="background: #fff;">球場形状別</th>
+                        </tr>
+                        <tr>
+                            <th>①</th><th>②</th><th>③</th><th>④</th><th>⑤</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-label">打数</td>
+                            <td>{{ count.pull_ab }}</td><td>{{ count.push_ab }}</td><td>{{ count.norun_ab }}</td><td>{{ count.loaded_ab }}</td><td>{{ count.risp_ab }}</td><td>{{ count.nonrisp_ab }}</td><td>-</td><td>{{ count.s0_ab }}</td><td>{{ count.s2_ab }}</td><td>{{ count.off_ab }}</td><td>{{ count.left_ab }}</td><td>-</td><td>{{ count.bat4_ab }}</td><td style="background-color: #fff2cc;">-</td><td>{{ count.st1_ab }}</td><td>{{ count.st2_ab }}</td><td>{{ count.st3_ab }}</td><td>{{ count.st4_ab }}</td><td>{{ count.st5_ab }}</td>
+                        </tr>
+                        <tr>
+                            <td class="col-label">安打</td>
+                            <td>{{ count.pull_h }}</td><td>{{ count.push_h }}</td><td>{{ count.norun_h }}</td><td>{{ count.loaded_h }}</td><td>{{ count.risp_h }}</td><td>{{ count.nonrisp_h }}</td><td>-</td><td>{{ count.s0_h }}</td><td>{{ count.s2_h }}</td><td>{{ count.off_h }}</td><td>{{ count.left_h }}</td><td>-</td><td>{{ count.bat4_h }}</td><td style="background-color: #fff2cc;">-</td><td>{{ count.st1_h }}</td><td>{{ count.st2_h }}</td><td>{{ count.st3_h }}</td><td>{{ count.st4_h }}</td><td>{{ count.st5_h }}</td>
+                        </tr>
+                        <tr>
+                            <td class="col-label">打率</td>
+                            <td>{{ format_avg(count.pull_h, count.pull_ab) }}</td><td>{{ format_avg(count.push_h, count.push_ab) }}</td><td>{{ format_avg(count.norun_h, count.norun_ab) }}</td><td>{{ format_avg(count.loaded_h, count.loaded_ab) }}</td><td>{{ format_avg(count.risp_h, count.risp_ab) }}</td><td>{{ format_avg(count.nonrisp_h, count.nonrisp_ab) }}</td><td style="font-weight:bold;">{{ format_diff(count.risp_h, count.risp_ab, count.all_h, count.all_ab) }}</td><td>{{ format_avg(count.s0_h, count.s0_ab) }}</td><td>{{ format_avg(count.s2_h, count.s2_ab) }}</td><td>{{ format_avg(count.off_h, count.off_ab) }}</td><td>{{ format_avg(count.left_h, count.left_ab) }}</td><td style="font-weight:bold;">{{ format_diff(count.left_h, count.left_ab, count.all_h, count.all_ab) }}</td><td>{{ format_avg(count.bat4_h, count.bat4_ab) }}</td><td style="background-color: #fff2cc; font-weight:bold; color:#d93025;">{{ format_avg(multi_hit_games.count, total_hit_games) }}</td><td>{{ format_avg(count.st1_h, count.st1_ab) }}</td><td>{{ format_avg(count.st2_h, count.st2_ab) }}</td><td>{{ format_avg(count.st3_h, count.st3_ab) }}</td><td>{{ format_avg(count.st4_h, count.st4_ab) }}</td><td>{{ format_avg(count.st5_h, count.st5_ab) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="detail-wrapper">
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th class="th-gray">日付</th><th class="th-gray">Game ID</th>
+                        <th class="th-orange">属性</th><th class="th-orange">打順</th>
+                        <th class="th-yellow">結果</th><th class="th-yellow">方向</th><th class="th-yellow">ランナー</th><th class="th-yellow">ストライク</th><th class="th-orange">球場形状</th>
+                        <th class="th-gray">進塁打</th><th class="th-gray">対左投手</th>
+                        <th class="th-gray">複数安打</th>
+                    </tr>
+                </thead>
+                <tbody>
+

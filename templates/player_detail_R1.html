@@ -1,0 +1,51 @@
+{% include 'parts/player_detail_R1/01.html' %}{% include 'parts/player_detail_R1/02.html' %}{% macro format_avg(h, ab) %}{% if ab > 0 %}{% set a = h / ab %}{% set v = "%.3f"|format(a) %}{% if a < 1 %}.{{ v[2:] }}{% else %}{{ v }}{% endif %}{% else %}.000{% endif %}{% endmacro %}
+{% include 'parts/player_detail_R1/03.html' %}{% macro render_score_board(label, ab, hits, style_override="", class_extra="") %}
+    {% set ab = ab|int %}
+    {% set hits = hits|int %}
+    {% set avg = (hits / ab) if ab > 0 else 0.0 %}
+    {% set class_name = 'hot-zone' if avg >= 0.3 and ab > 0 else ('cold-zone' if avg < 0.2 and ab > 0 else '') %}
+    <div class="stat-box {{ class_name }} {{ class_extra }}" style="{{ style_override }}">
+        <div class="box-label">{{ label }}</div>
+        <div class="box-rate">{{ format_avg(hits, ab) }}</div>
+        <div class="box-detail">{{ ab }}-{{ hits }}</div>
+    </div>
+{% endmacro %}
+{% include 'parts/player_detail_R1/04.html' %}{% set st = namespace(
+    dir_left_ab=0, dir_left_h=0, dir_center_ab=0, dir_center_h=0, dir_right_ab=0, dir_right_h=0,
+    run0_ab=0, run0_h=0, run1_ab=0, run1_h=0, run2_ab=0, run2_h=0, run3_ab=0, run3_h=0,
+    run12_ab=0, run12_h=0, run13_ab=0, run13_h=0, run23_ab=0, run23_h=0, runF_ab=0, runF_h=0,
+    total_ab=0, total_h=0, total_hr=0
+) %}
+{% include 'parts/player_detail_R1/05.html' %}{% macro colored_name(fname, player) -%}
+{%- set ns = namespace(colors=[]) -%}
+{%- for key in ['pos1', 'pos2', 'pos3'] -%}
+  {%- set pos = (player.get(key, '') or '')|string|trim -%}
+  {%- if pos -%}
+    {%- set cur = namespace(c='') -%}
+    {%- if pos in ['投', '投手'] -%}{%- set cur.c = '#ff7eae' -%}
+    {%- elif pos in ['捕', '捕手'] -%}{%- set cur.c = '#5ec8f5' -%}
+    {%- elif pos in ['一', '二', '三', '遊', '内', '内野'] -%}{%- set cur.c = '#ffe14a' -%}
+    {%- elif pos in ['左', '中', '右', '外', '外野'] -%}{%- set cur.c = '#7ed957' -%}
+    {%- elif pos in ['DH', 'ＤＨ'] -%}{%- set cur.c = '#ffb020' -%}
+    {%- endif -%}
+    {%- if cur.c and (ns.colors|length == 0 or ns.colors[-1] != cur.c) -%}
+      {%- set ns.colors = ns.colors + [cur.c] -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- set n = ns.colors|length -%}
+{%- set shown = (fname[0] ~ '　' ~ fname[1]) if fname|length == 2 else fname -%}
+{%- if n > 0 -%}
+{%- set band = namespace(bits=[]) -%}
+{%- for c in ns.colors -%}
+  {%- set band.bits = band.bits + [c ~ ' ' ~ (loop.index0 * 100 / n) ~ '% ' ~ (loop.index * 100 / n) ~ '%'] -%}
+{%- endfor -%}
+<span class="name-fill" style="background-image:linear-gradient(90deg, {{ band.bits|join(', ') }})"></span>
+{%- endif -%}
+<span class="name-letters">{{ shown }}</span>
+{%- endmacro %}
+                    {% set fname = player['name'].split(' ')[0] %}
+{% include 'parts/player_detail_R1/06.html' %}
+{% include 'parts/player_detail_R1/07.html' %}                    {% set age_pts = (40 - player.get('age', 25)) * 1 %}
+{% include 'parts/player_detail_R1/08.html' %}                {% set fname = player['name'].split(' ')[0] %}
+{% include 'parts/player_detail_R1/09.html' %}{% include 'parts/player_detail_R1/10.html' %}{% include 'parts/player_detail_R1/11.html' %}{% include 'parts/player_detail_R1/12.html' %}

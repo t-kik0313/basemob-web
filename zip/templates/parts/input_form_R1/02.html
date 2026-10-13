@@ -1,0 +1,101 @@
+            border: 1px solid #e0e6ed;
+            margin-bottom: 25px;
+        }
+        .stats-section-title {
+            font-weight: bold;
+            color: #1a3a83;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #cce0ff;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <a href="{{ url_for('player_detail_R1', player_id=player.player_id) }}" class="btn-back">◀ 選手詳細へ戻る</a>
+        </div>
+        
+        <h1>成績入力 ({{ player.name }})</h1>
+        
+        <form action="{{ url_for('save_record', player_id=player.player_id) }}" method="POST">
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="title-label">試合日付</label>
+                    <input type="date" name="game_date" required>
+                </div>
+                <div class="info-item">
+                    <label class="title-label">Game ID</label>
+                    <select name="game_id" required>
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="info-item">
+                    <label class="title-label">球場形状 (1-5)</label>
+                    <select name="stadium">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="title-label">試合属性</label>
+                    <select name="game_type">
+                        <option value="official">公式戦</option>
+                        <option value="practice">練習試合</option>
+                    </select>
+                </div>
+                <div class="info-item">
+                    <label class="title-label">打順</label>
+                    <select name="batting_order">
+                        <option value="1">1番</option>
+                        <option value="2">2番</option>
+                        <option value="3">3番</option>
+                        <option value="4">4番</option>
+                        <option value="5">5番</option>
+                        <option value="6">6番</option>
+                        <option value="7">7番</option>
+                        <option value="8">8番</option>
+                        <option value="9">9番</option>
+                        <option value="sub">控え</option>
+                    </select>
+                </div>
+                <div class="info-item">
+                    <label class="title-label">守備位置</label>
+                    <select name="fielding_position">
+                        <option value="1">投</option>
+                        <option value="2">捕</option>
+                        <option value="3">一</option>
+                        <option value="4">二</option>
+                        <option value="5">三</option>
+                        <option value="6">遊</option>
+                        <option value="7">左</option>
+                        <option value="8">中</option>
+                        <option value="9">右</option>
+                        <option value="DH">DH</option>
+                        <option value="PH">代打</option>
+                        <option value="PR">代走</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="width: 100%; overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">打席</th>
+                            <th>結果</th>
+                            <th>方向</th>
+                            <th>ランナー</th>
+                            <th style="width: 80px;">ストライク</th>
+

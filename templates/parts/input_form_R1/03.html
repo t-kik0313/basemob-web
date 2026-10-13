@@ -1,0 +1,101 @@
+                            <th style="width: 60px;">対左</th>
+                            <th style="width: 80px;">サヨナラ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="atBatsBody">
+                        <tr>
+                            <td class="row-num">1</td>
+                            <td>
+                                <select name="result[]" onchange="toggleDirection(this)">
+                                    <option value="O">凡退</option>
+                                    <option value="1B">単打</option>
+                                    <option value="2B">二塁打</option>
+                                    <option value="3B">三塁打</option>
+                                    <option value="HR">本塁打</option>
+                                    <option value="K">三振</option>
+                                    <option value="BB">四球</option>
+                                    <option value="HBP">死球</option>
+                                    <option value="SF">犠飛</option>
+                                    <option value="SH">犠打</option>
+                                    <option value="E">敵失</option>
+                                    <option value="FC">野選</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="direction[]" style="background: #fff;">
+                                    <option value="">-</option>
+                                    <option value="1">投</option><option value="2">捕</option><option value="3">一</option>
+                                    <option value="4">二</option><option value="5">三</option><option value="6">遊</option>
+                                    <option value="7">左</option><option value="8">中</option><option value="9">右</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="runner[]">
+                                    <option value="0">なし</option><option value="1">1塁</option><option value="2">2塁</option>
+                                    <option value="3">3塁</option><option value="1.2">1・2塁</option><option value="1.3">1・3塁</option>
+                                    <option value="2.3">2・3塁</option><option value="F">満塁</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="s1">
+                                    <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="hidden" name="vs_left[]" value="0">
+                                <input type="checkbox" onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                            </td>
+                            <td>
+                                <input type="hidden" name="sayonara[]" value="0">
+                                <input type="checkbox" onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                            </td>
+                            
+                            <input type="hidden" name="bases[]" value="1">
+                            <input type="hidden" name="advancing_runner[]" value="0">
+                            <input type="hidden" name="multi_hit[]" value="0">
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="add-btn-container">
+                <button type="button" class="add-btn" onclick="addAtBat()">＋ 打席を追加</button>
+            </div>
+
+            <div class="bottom-stats-container">
+                <div class="stats-section-title">▼ 試合の集計データ</div>
+                
+                <div class="info-grid" style="margin-bottom: 0;">
+                    <div class="info-item">
+                        <label class="title-label">盗塁</label>
+                        <input type="number" name="game_sb" value="0">
+                    </div>
+                    <div class="info-item">
+                        <label class="title-label">得点</label>
+                        <input type="number" name="game_runs" value="0">
+                    </div>
+                    <div class="info-item">
+                        <label class="title-label">打点</label>
+                        <input type="number" name="game_rbi" value="0">
+                    </div>
+                    <div class="info-item">
+                        <label class="title-label">失策</label>
+                        <input type="number" name="game_errors" value="0">
+                    </div>
+                    <div class="info-item">
+                        <label class="title-label">併殺打</label>
+                        <input type="number" name="game_gidp" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">成績を登録する</button>
+        </form>
+    </div>
+
+    <script>
+        function toggleDirection(selectObj) {
+            const tr = selectObj.closest('tr');
+            const dirSelect = tr.querySelector('select[name="direction[]"]');
+            
+

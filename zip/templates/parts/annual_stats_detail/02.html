@@ -1,0 +1,82 @@
+                </tbody>
+                <!-- ▼ チーム合計の行（</tbody>の直下に追加します） ▼ -->
+                <tfoot style="background-color: #fff3cd; border-top: 3px solid #666;">
+                    <tr>
+                        <td style="font-weight: bold; text-align: center;">チーム合計</td>
+                        <td>{{ team_total.get('games', 0) }}</td>
+                        <td>{% set avg = team_total.get('avg', 0)|float %}{% set val = '%.3f'|format(avg) %}{% if avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ team_total.get('pa', 0) }}</td>
+                        <td>{{ team_total.get('ab', 0) }}</td>
+                        <td>{{ team_total.get('hits', 0) }}</td>
+                        <td>{{ team_total.get('hr', 0) }}</td>
+                        <td>{{ team_total.get('rbi', 0) }}</td>
+                        <td>{{ team_total.get('runs', 0) }}</td>
+                        <td>{{ team_total.get('sb', 0) }}</td>
+                        <td>{% set obp = team_total.get('obp', 0)|float %}{% set val = '%.3f'|format(obp) %}{% if obp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set slg = team_total.get('slg', 0)|float %}{% set val = '%.3f'|format(slg) %}{% if slg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set risp_avg = team_total.get('risp_avg', 0)|float %}{% set val = '%.3f'|format(risp_avg) %}{% if risp_avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set ops = team_total.get('ops', 0)|float %}{% set val = '%.3f'|format(ops) %}{% if ops < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ team_total.get('doubles', 0) }}</td>
+                        <td>{{ team_total.get('triples', 0) }}</td>
+                        <td>{{ team_total.get('so', 0) }}</td>
+                        <td>{{ team_total.get('bb', 0) }}</td>
+                        <td>{{ team_total.get('hbp', 0) }}</td>
+                        <td>{{ team_total.get('sh', 0) }}</td>
+                        <td>{{ team_total.get('sf', 0) }}</td>
+                        <td>{{ team_total.get('gidp', 0) }}</td>
+                        <td>{{ team_total.get('errors', 0) }}</td>
+                        <td>{{ team_total.get('fielding_errors', 0) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // テーブルの見出し(th)をすべて取得
+    const headers = document.querySelectorAll('thead th');
+    const tbody = document.querySelector('tbody');
+
+    headers.forEach((header, index) => {
+        // マウスを乗せたときに指マークにする（クリックできることをアピール）
+        header.style.cursor = 'pointer';
+        header.title = "クリックで並び替え";
+
+        header.addEventListener('click', function() {
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 現在昇順(asc)なら降順(desc)に、そうでなければ昇順(asc)にする
+            const isAsc = header.classList.contains('asc');
+
+            // 全ヘッダーのクラス（矢印の向きなどの状態）をリセット
+            headers.forEach(th => th.classList.remove('asc', 'desc'));
+            header.classList.add(isAsc ? 'desc' : 'asc');
+
+            rows.sort((a, b) => {
+                let aText = a.children[index].textContent.trim();
+                let bText = b.children[index].textContent.trim();
+
+                // 🌟 打率などの「.333」を「0.333」として正しく数値比較させるための魔法
+                if (aText.startsWith('.')) aText = '0' + aText;
+                if (bText.startsWith('.')) bText = '0' + bText;
+
+                const aVal = parseFloat(aText);
+                const bVal = parseFloat(bText);
+
+                if (!isNaN(aVal) && !isNaN(bVal)) {
+                    // 両方数値なら数値で比較（引き算）
+                    return isAsc ? bVal - aVal : aVal - bVal;
+                } else {
+                    // 文字列（名前など）なら五十音順/アルファベット順で比較
+                    return isAsc ? bText.localeCompare(aText) : aText.localeCompare(bText);
+                }
+            });
+
+            // 並び替えた行をtbodyに戻す（画面がパッと一瞬で更新されます）
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ player['name'] }}の過去成績</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background: #f4f7f9; color: #333; font-family: 'Inter', Arial, sans-serif; }
+        
+        /* ★修正1: コンテナの幅を900pxから1200pxに拡大して広々とさせる */
+        .container { max-width: 1200px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 32px; }
+        h2 { color: #004d99; margin-bottom: 24px; font-size: 1.8rem; }
+        
+        /* ★修正2: 表の文字サイズを少しだけ小さくして収まりやすくする */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.95rem; }
+        
+        /* ★修正3: セルの横の余白を削って横幅を節約 */
+        th, td { border: 1px solid #ccc; text-align: center; vertical-align: middle; }
+        td { padding: 8px 4px; }
+        th { background: #e5e7eb; color: #004d99; padding: 10px 4px; font-weight: bold; }
+        
+        .vert-th {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            white-space: nowrap;
+            margin: 0 auto;
+            letter-spacing: 1px; /* 縦書きの文字の隙間を少し詰める */
+        }
+
+        tr:nth-child(even) { background: #f9f9f9; }
+        .btn-back-container { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+        .btn-back { display: inline-block !important; padding: 8px 16px !important; background: #1a3c8d !important; color: #fff !important; text-decoration: none !important; border-radius: 4px !important; font-weight: bold !important; font-size: 0.85rem !important; border: none !important; cursor: pointer !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; transition: background 0.2s !important; }
+        .btn-back:hover { background: #122b66 !important; }
+        .table-wrapper { overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <button onclick="window.history.back();" class="btn-back">◀ 選手詳細へ戻る</button>
+        </div>
+        
+        <h2>{{ player['name'] }}の過去成績</h2>
+        
+        <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px;">
+            <form action="{{ url_for('player_history', player_id=player['id']) }}" method="GET" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <select name="year" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="">すべての年度</option>
+                    <option value="2026" {% if request.args.get('year') == '2026' %}selected{% endif %}>2026年</option>
+                    <option value="2025" {% if request.args.get('year') == '2025' %}selected{% endif %}>2025年</option>
+                    <option value="2024" {% if request.args.get('year') == '2024' %}selected{% endif %}>2024年</option>
+                    <option value="2023" {% if request.args.get('year') == '2023' %}selected{% endif %}>2023年</option>
+                    <option value="2022" {% if request.args.get('year') == '2022' %}selected{% endif %}>2022年</option>
+                    <option value="2021" {% if request.args.get('year') == '2021' %}selected{% endif %}>2021年</option>
+                    <option value="2020" {% if request.args.get('year') == '2020' %}selected{% endif %}>2020年</option>
+                </select>
+                <select name="game_type" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="">すべての試合属性</option>
+                    <option value="公式戦" {% if request.args.get('game_type') == '公式戦' %}selected{% endif %}>公式戦</option>
+                    <option value="練習試合" {% if request.args.get('game_type') == '練習試合' %}selected{% endif %}>練習試合</option>
+                </select>
+                <button type="submit" style="background: #337ab7; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">絞り込む</button>
+                <a href="{{ url_for('player_history', player_id=player['id']) }}" style="background: #e5e7eb; color: #333; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; display: flex; align-items: center;">クリア</a>
+            </form>
+        </div>
+
+

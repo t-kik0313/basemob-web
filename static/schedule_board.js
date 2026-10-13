@@ -1,0 +1,1298 @@
+(function () {
+    const boot = window.SCHEDULE_BOOT || {};
+    const players = (boot.roster || []).map(player => ({ player_id: player.player_id, name: player.name }));
+    const roster = players.map(player => ({ player_id: player.player_id, name: player.name }));
+    const rosterNames = players.map(player => player.name);
+    const READY = 7;
+    const MARK = 9;
+    const DOW = "日月火水木金土";
+    const MANUAL = "__manual__";
+    const POSITIONS = ["投", "捕", "一", "二", "三", "遊", "左", "中", "右", "DH"];
+    const positionColors = {
+        "投": "#ff7eae", "捕": "#5ec8f5",
+        "一": "#ffe14a", "二": "#ffe14a", "三": "#ffe14a", "遊": "#ffe14a",
+        "左": "#7ed957", "中": "#7ed957", "右": "#7ed957",
+        "DH": "#ffb020"
+    };
+    const STADIUMS = {
+        "大田スタジアム": "東京都大田区東海1-2-1",
+        "多摩川緑地広場野球場": "東京都大田区本羽田3-29",
+        "駒沢オリンピック公園総合運動場野球場": "東京都世田谷区駒沢公園1-1",
+        "等々力球場": "神奈川県川崎市中原区等々力1-1",
+        "世田谷公園野球場": "東京都世田谷区池尻1-5-27"
+    };
+    const choiceMeta = [
+        ["all", "終日"], ["am", "午前だけ"], ["pm", "午後だけ"], ["pending", "未定"], ["out", "不参加"]
+    ];
+
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const rangeEnd = new Date(todayDate.getFullYear(), todayDate.getMonth() + 2, 0);
+    const TODAY = isoDate(todayDate);
+    const RANGE_END = isoDate(rangeEnd);
+    const monthTitle = `${todayDate.getMonth() + 1}月・${rangeEnd.getMonth() + 1}月の日程調整`;
+    const answerTitle = `${todayDate.getMonth() + 1}月・${rangeEnd.getMonth() + 1}月の出欠`;
+
+    const state = { removed: [], added: [], answers: {}, games: {}, peopleCustom: false };
+    const answerDraft = {};
+    const drafts = {};
+    const askedView = new URLSearchParams(location.search).get("view");
+    let view = askedView === "board" || askedView === "answer" || askedView === "game" ? askedView : (boot.loggedIn ? "board" : "answer");
+    let openId = "";
+    let activeGame = "";
+    let pendingRemove = null;
+    let pendingSetup = null;
+    let pendingGameDelete = null;
+    let pendingLeave = null;
+    const openPast = {};
+    let editingGame = "";
+    let addressTimer = 0;
+    let addressToken = 0;
+    let showAdd = false;
+    let showPast = false;
+    let deleteMode = false;
+    let showPeople = false;
+    let pendingPerson = "";
+    let toast = "";
+    let toastBad = false;
+    let busy = false;
+    let scrollTo = "";
+    let manualMode = false;
+    let manualName = "";
+    let focusManual = false;
+    let manualCaret = null;
+    let personId = storedPerson();
+    if (personId.startsWith("manual:")) {
+        manualMode = true;
+        manualName = personId.slice("manual:".length);
+        personId = "";
+    } else if (!roster.some(player => String(player.player_id) === personId)) {
+        personId = "";
+    }
+
+    const app = document.getElementById("app");
+
+    function isoDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+    function parseDate(value) {
+        const [y, m, d] = value.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    }
+    function shiftDays(value, delta) {
+        const date = parseDate(value);
+        date.setDate(date.getDate() + delta);
+        return isoDate(date);
+    }
+    function nthWeekday(year, monthIndex, weekday, n) {
+        const first = new Date(year, monthIndex, 1);
+        const offset = (weekday - first.getDay() + 7) % 7;
+        return 1 + offset + (n - 1) * 7;
+    }
+    function equinoxDay(year, spring) {
+        const dy = year - 1980;
+        const base = spring ? 20.8431 : 23.2488;
+        return Math.floor(base + 0.242194 * dy) - Math.floor(dy / 4);
+    }
+    function holidayMap(year) {
+        const map = new Map();
+        const add = (month, day, name) => {
+            const key = isoDate(new Date(year, month - 1, day));
+            if (!map.has(key)) map.set(key, name);
+        };
+        add(1, 1, "元日");
+        add(1, nthWeekday(year, 0, 1, 2), "成人の日");
+        add(2, 11, "建国記念の日");
+        add(2, 23, "天皇誕生日");
+        add(3, equinoxDay(year, true), "春分の日");
+        add(4, 29, "昭和の日");
+        add(5, 3, "憲法記念日");
+        add(5, 4, "みどりの日");
+        add(5, 5, "こどもの日");
+        add(7, nthWeekday(year, 6, 1, 3), "海の日");
+        add(8, 11, "山の日");
+        add(9, nthWeekday(year, 8, 1, 3), "敬老の日");
+        add(9, equinoxDay(year, false), "秋分の日");
+        add(10, nthWeekday(year, 9, 1, 2), "スポーツの日");
+        add(11, 3, "文化の日");
+        add(11, 23, "勤労感謝の日");
+        for (const key of [...map.keys()].sort()) {
+            if (parseDate(key).getDay() !== 0) continue;
+            const cursor = parseDate(key);
+            do { cursor.setDate(cursor.getDate() + 1); } while (map.has(isoDate(cursor)));
+            map.set(isoDate(cursor), "振替休日");
+        }
+        let changed = true;
+        while (changed) {
+            changed = false;
+            const keys = [...map.keys()].sort();
+            for (let i = 0; i < keys.length - 1; i++) {
+                const gap = (parseDate(keys[i + 1]) - parseDate(keys[i])) / 86400000;
+                if (gap !== 2) continue;
+                const mid = parseDate(keys[i]);
+                mid.setDate(mid.getDate() + 1);
+                const midKey = isoDate(mid);
+                if (!map.has(midKey) && mid.getDay() !== 0) {
+                    map.set(midKey, "国民の休日");
+                    changed = true;
+                }
+            }
+        }
+        return map;
+    }
+    const holidays = new Map();
+    for (let year = todayDate.getFullYear(); year <= rangeEnd.getFullYear(); year++) {
+        for (const [key, name] of holidayMap(year)) holidays.set(key, name);
+    }
+
+    function isRoutine(iso) {
+        const date = parseDate(iso);
+        return Boolean(holidays.get(iso) || date.getDay() === 0 || date.getDay() === 6);
+    }
+    function visible() {
+        const removed = new Set(state.removed);
+        const added = new Set(state.added);
+        const list = [];
+        for (let cursor = new Date(todayDate); cursor <= rangeEnd; cursor.setDate(cursor.getDate() + 1)) {
+            const iso = isoDate(cursor);
+            if (removed.has(iso)) continue;
+            const holidayName = holidays.get(iso) || "";
+            const dow = cursor.getDay();
+            const routine = Boolean(holidayName) || dow === 0 || dow === 6;
+            if (!added.has(iso) && !routine) continue;
+            list.push({
+                iso,
+                md: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
+                dow: DOW[dow],
+                kind: holidayName ? "hol" : (dow === 6 ? "sat" : dow === 0 ? "sun" : "plain"),
+                extra: added.has(iso) && !routine ? "追加" : holidayName
+            });
+        }
+        return list;
+    }
+    function answerOf(iso, playerKey) {
+        return (state.answers[iso] || {})[playerKey] || null;
+    }
+    function plainName(value) {
+        return String(value || "").replace(/[\s\u3000]/g, "");
+    }
+    function guests() {
+        const found = new Map();
+        Object.values(state.answers).forEach(bucket => {
+            Object.entries(bucket || {}).forEach(([key, record]) => {
+                if (key.startsWith("n:") && record && record.name) found.set(key, record.name);
+            });
+        });
+        return Array.from(found, ([player_id, name]) => ({ player_id, name }));
+    }
+    function answerers() {
+        return roster.concat(guests());
+    }
+    function counts(iso) {
+        let all = 0;
+        let am = 0;
+        let pm = 0;
+        answerers().forEach(player => {
+            const status = (answerOf(iso, String(player.player_id)) || {}).status;
+            if (status === "all") all += 1;
+            else if (status === "am") am += 1;
+            else if (status === "pm") pm += 1;
+        });
+        return { am: all + am, pm: all + pm };
+    }
+    function people(iso, status) {
+        return answerers().filter(player => (answerOf(iso, String(player.player_id)) || {}).status === status);
+    }
+    function unanswered(iso) {
+        return roster.filter(player => !(answerOf(iso, String(player.player_id)) || {}).status);
+    }
+    function effective(playerKey, iso) {
+        const draft = answerDraft[playerKey] && answerDraft[playerKey][iso];
+        if (draft) return draft;
+        const saved = answerOf(iso, playerKey);
+        if (saved) return { status: saved.status, by: saved.by || shiftDays(TODAY, 14) };
+        return { status: "", by: shiftDays(TODAY, 14) };
+    }
+    function ensureDraft(playerKey, iso) {
+        answerDraft[playerKey] = answerDraft[playerKey] || {};
+        if (!answerDraft[playerKey][iso]) {
+            const current = effective(playerKey, iso);
+            answerDraft[playerKey][iso] = { status: current.status, by: current.by };
+        }
+        return answerDraft[playerKey][iso];
+    }
+    function sameAnswer(draft, saved) {
+        const left = draft || { status: "", by: "" };
+        const right = saved || { status: "", by: "" };
+        if ((left.status || "") !== (right.status || "")) return false;
+        if (left.status === "pending" && (left.by || "") !== (right.by || "")) return false;
+        return true;
+    }
+    function answerDirty(playerKey) {
+        const draft = answerDraft[playerKey];
+        if (!draft) return false;
+        return Object.keys(draft).some(iso => !sameAnswer(draft[iso], answerOf(iso, playerKey)));
+    }
+    function personKey() {
+        if (!manualMode) return personId;
+        const display = manualName.trim().slice(0, 40);
+        const plain = plainName(display).slice(0, 40);
+        if (!plain) return "";
+        const hit = roster.find(player => plainName(player.name) === plainName(display));
+        return hit ? String(hit.player_id) : `n:${plain}`;
+    }
+    function rememberAnswering() {
+        const key = personKey();
+        if (manualMode && key.startsWith("n:")) rememberPerson(`manual:${manualName.trim().slice(0, 40)}`);
+        else rememberPerson(key);
+    }
+    async function submitAnswers() {
+        const key = personKey();
+        if (!key) throw new Error(manualMode ? "名前を入力してください。" : "名前を選んでください。");
+        const answers = {};
+        visible().forEach(day => {
+            const current = effective(key, day.iso);
+            if (current.status === "pending" && !current.by) throw new Error("未定の場合は、回答期日を設定してください。");
+            answers[day.iso] = current.status === "pending" ? { status: "pending", by: current.by } : { status: current.status };
+        });
+        const body = { action: "answer", answers };
+        if (key.startsWith("n:")) body.name = manualName.trim().slice(0, 40);
+        else body.person_id = key;
+        await postPoll(body);
+        delete answerDraft[key];
+    }
+    function blankGame(slot) {
+        return {
+            slot: slot || "pm",
+            opponent: "",
+            eventName: "練習試合",
+            stadium: "",
+            address: "",
+            uniform: "黒",
+            bat: "情報なし",
+            timeGather: "",
+            timePB: "",
+            bench: "",
+            lineup: Array.from({ length: 10 }, () => ({ n: "", p: "" }))
+        };
+    }
+    function cloneGame(game) {
+        const copy = blankGame(game && game.slot);
+        if (!game) return copy;
+        ["slot", "opponent", "eventName", "stadium", "address", "uniform", "bat", "timeGather", "timePB", "bench"].forEach(key => {
+            if (game[key] != null) copy[key] = game[key];
+        });
+        copy.lineup = Array.from({ length: 10 }, (_, index) => {
+            const row = (game.lineup || [])[index] || {};
+            return { n: row.n || "", p: row.p || "" };
+        });
+        return copy;
+    }
+    function gameCard(iso) {
+        return document.querySelector(`[data-game="${iso}"]`);
+    }
+    function syncLineupFromForm(iso, game) {
+        const card = gameCard(iso);
+        if (!card) return;
+        game.lineup.forEach((row, index) => {
+            const pos = card.querySelector(`[data-pos="${index}"]`);
+            if (pos) row.p = pos.value;
+            const manual = card.querySelector(`[data-manual="${index}"]`);
+            const name = card.querySelector(`[data-name="${index}"]`);
+            if (manual && !manual.hidden) row.n = manual.value;
+            else if (name && name.value !== MANUAL) row.n = name.value;
+        });
+    }
+    function tenthLabel(game) {
+        const hasDh = game.lineup.slice(0, 9).some(row => row.p === "DH");
+        const tenth = game.lineup[9] || {};
+        return hasDh && tenth.p === "投" ? "P" : "10";
+    }
+    function draftFor(iso) {
+        if (!drafts[iso]) drafts[iso] = cloneGame(state.games[iso] || blankGame("pm"));
+        return drafts[iso];
+    }
+    function supportNames(iso, game) {
+        const starters = new Set(game.lineup.map(row => row.n.trim()).filter(Boolean));
+        return answerers().filter(player => {
+            const status = (answerOf(iso, String(player.player_id)) || {}).status;
+            const inSlot = game.slot === "pm" ? (status === "all" || status === "pm") : (status === "all" || status === "am");
+            return inSlot && !starters.has(player.name);
+        }).map(player => player.name);
+    }
+    function dayFromIso(iso) {
+        const date = parseDate(iso);
+        const holidayName = holidays.get(iso) || "";
+        const dow = date.getDay();
+        return {
+            iso,
+            md: `${date.getMonth() + 1}/${date.getDate()}`,
+            dow: DOW[dow],
+            kind: holidayName ? "hol" : (dow === 6 ? "sat" : dow === 0 ? "sun" : "plain"),
+            extra: holidayName
+        };
+    }
+    function gameDays() {
+        return visible().filter(day => state.games[day.iso]);
+    }
+    function pastGameDays() {
+        return Object.keys(state.games).filter(iso => iso < TODAY && state.games[iso]).sort().map(dayFromIso);
+    }
+    function findGameDay(iso) {
+        return gameDays().find(item => item.iso === iso) || pastGameDays().find(item => item.iso === iso);
+    }
+    function currentGameId() {
+        const days = gameDays();
+        if (activeGame && days.some(day => day.iso === activeGame)) return activeGame;
+        const upcoming = days.find(day => day.iso >= TODAY);
+        return (upcoming || days[0] || {}).iso || "";
+    }
+    function esc(value) {
+        return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+    function conditionSrc(name) {
+        const text = (boot.conditions || {})[name] || "普通";
+        return (boot.icons || {})[text] || (boot.icons || {})["普通"] || "";
+    }
+    function storedPerson() {
+        try { return sessionStorage.getItem("schedule-person") || ""; }
+        catch (error) { return ""; }
+    }
+    function rememberPerson(id) {
+        try { sessionStorage.setItem("schedule-person", id); }
+        catch (error) { /* 保存できなくても回答自体は送れる */ }
+    }
+    function setToast(message, bad) {
+        toast = message || "";
+        toastBad = Boolean(bad);
+    }
+    function applyPoll(data) {
+        state.removed = data.removed || [];
+        state.added = data.added || [];
+        state.answers = data.answers || {};
+        if (Object.prototype.hasOwnProperty.call(data, "games")) state.games = data.games || {};
+        setPeople(data.people, data.peopleCustom);
+    }
+    function setPeople(people, custom) {
+        if (!Array.isArray(people)) return;
+        roster.splice(0, roster.length, ...people.map(person => ({ player_id: person.id, name: person.name })));
+        state.peopleCustom = Boolean(custom);
+        if (!manualMode && personId && !roster.some(player => String(player.player_id) === String(personId))) {
+            personId = "";
+            rememberPerson("");
+        }
+    }
+    function peoplePayload() {
+        return roster.map(person => ({ id: String(person.player_id), name: person.name }));
+    }
+    async function postPoll(body) {
+        const response = await fetch(boot.pollApi, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "保存に失敗しました。");
+        applyPoll(data);
+    }
+    async function run(task) {
+        if (busy) return;
+        busy = true;
+        try {
+            await task();
+        } catch (error) {
+            setToast(error.message || "保存に失敗しました。", true);
+        } finally {
+            busy = false;
+            render();
+        }
+    }
+
+    function toastHtml() {
+        if (!toast) return "";
+        return `<div class="toast${toastBad ? " bad" : ""}">${esc(toast)}</div>`;
+    }
+    function memberHead() {
+        const tabs = [
+            ["board", "調整ボード", "調整"],
+            ["answer", "回答シート", "回答"],
+            ["game", "試合カード", "試合"]
+        ];
+        const buttons = tabs.map(([id, label]) => `<button type="button" data-view="${id}" class="${view === id ? "on" : ""}">${label}</button>`).join("");
+        const eventTab = `<a href="${esc(boot.eventsUrl || "events")}">イベント</a>`;
+        const title = view === "game" ? "試合カード" : (view === "answer" ? answerTitle : monthTitle);
+        return `<header class="site"><h1>${title}</h1><div class="view-switch">${buttons}${eventTab}</div></header>`;
+    }
+    function meter(count, slot, hot) {
+        const peopleCount = Math.max(roster.length, 1);
+        const width = Math.min(100, count / peopleCount * 100);
+        const mark = Math.min(100, MARK / peopleCount * 100);
+        const label = slot === "pm" ? "午後（13:00~）" : "午前（~13:00）";
+        return `<div class="slot${hot ? " up" : ""}"><span class="k">${label}</span><span class="n">${count}</span><span class="meter"><i style="width:${width}%"></i><em style="left:${mark}%"></em></span></div>`;
+    }
+    function scale() {
+        if (!roster.length) return "";
+        const ticks = Array.from({ length: roster.length }, () => "<span></span>").join("");
+        return `<div class="tick-row"><span></span><span></span><div class="ticks" style="--people:${roster.length}">${ticks}</div></div>`;
+    }
+    function goButton(day, slot) {
+        const label = slot === "pm" ? "午後に試合を設定する" : "午前に試合を設定する";
+        return `<button type="button" class="go" data-go="${day.iso}" data-slot="${slot}">${label}</button>`;
+    }
+    function nameChips(players) {
+        if (!players.length) return '<span class="empty">なし</span>';
+        return players.map(player => `<span class="chip">${esc(player.name)}</span>`).join("");
+    }
+    function pendingChips(iso, players) {
+        if (!players.length) return '<span class="empty">なし</span>';
+        return players.map(player => {
+            const answer = answerOf(iso, String(player.player_id)) || {};
+            const late = answer.by && answer.by < TODAY;
+            const when = String(answer.by || "").slice(5).replace("-", "/");
+            return `<span class="chip${late ? " late" : ""}">${esc(player.name)}（${esc(when)}${late ? "・期限超過" : ""}）</span>`;
+        }).join("");
+    }
+    function dateField(attrs) {
+        return `<label class="date-field"><input type="date" ${attrs}><span class="date-ph">年/月/日</span></label>`;
+    }
+    function addControls(phone) {
+        const cls = phone ? "add-phone" : "addbar";
+        return `<div class="${cls}">${dateField(`id="add-date" min="${TODAY}" max="${RANGE_END}"`)}<button type="button" id="add-day">この日を足す</button></div>`;
+    }
+    function manageButtons() {
+        return `<div class="manage"><button type="button" id="toggle-add" class="${showAdd ? "on" : ""}" aria-pressed="${showAdd ? "true" : "false"}">日程追加</button><button type="button" id="toggle-delete" class="${deleteMode ? "on" : ""}" aria-pressed="${deleteMode ? "true" : "false"}">予定削除</button><button type="button" id="toggle-people" class="${showPeople ? "on" : ""}" aria-pressed="${showPeople ? "true" : "false"}">回答対象者</button></div>`;
+    }
+    function peoplePanel() {
+        if (!showPeople) return "";
+        const chips = roster.map(person => `<button type="button" data-person-remove="${esc(person.player_id)}">${esc(person.name)} ×</button>`).join("");
+        const note = state.peopleCustom ? "この一覧が調整ボードと回答シートの回答対象です。" : "回答対象者を選択してください。";
+        return `<div class="people-box"><p class="people-note">${note}</p><div class="people-list">${chips || '<span class="empty">まだいません</span>'}</div><div class="addbar"><input id="person-add" placeholder="追加メンバーを入力" aria-label="追加メンバーを入力"><button type="button" id="person-add-btn">追加</button></div></div>`;
+    }
+    function personAlert() {
+        if (!pendingPerson) return "";
+        const person = roster.find(item => String(item.player_id) === pendingPerson);
+        if (!person) return "";
+        return `<div class="alert-back"><div class="alert-panel" role="alertdialog" aria-labelledby="person-remove-text"><p id="person-remove-text">${esc(person.name)}を回答対象から外しますか？</p><div class="alert-actions"><button type="button" id="person-remove-ok">外す</button><button type="button" id="person-remove-cancel">キャンセル</button></div></div></div>`;
+    }
+    function trashButton(iso) {
+        if (!deleteMode) return "";
+        return `<button type="button" class="trash" data-remove="${iso}" aria-label="予定削除"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM8 9h2v9H8V9z"/></svg></button>`;
+    }
+    function setupButton(iso) {
+        if (!showAdd) return "";
+        return `<button type="button" class="set-game" data-setup="${iso}">試合を設定</button>`;
+    }
+
+    function dayCard(day) {
+        const count = counts(day.iso);
+        const amHot = count.am >= READY;
+        const pmHot = count.pm >= READY;
+        const hot = amHot || pmHot;
+        const game = state.games[day.iso];
+        const moving = game ? (game.slot === "pm" ? "午後で活動予定" : "午前で活動予定") : "";
+        const pill = moving || (hot ? "手配候補" : "様子見");
+        const pillClass = moving ? "pill move" : (hot ? "pill yes" : "pill");
+        const opened = openId === day.iso;
+        const detail = opened ? `<div class="detail"><div class="groups">
+            <div class="group"><h3>終日 ${people(day.iso, "all").length}</h3>${nameChips(people(day.iso, "all"))}</div>
+            <div class="group"><h3>午前だけ ${people(day.iso, "am").length}</h3>${nameChips(people(day.iso, "am"))}</div>
+            <div class="group"><h3>午後だけ ${people(day.iso, "pm").length}</h3>${nameChips(people(day.iso, "pm"))}</div>
+            <div class="group"><h3>未定 ${people(day.iso, "pending").length}</h3>${pendingChips(day.iso, people(day.iso, "pending"))}</div>
+            <div class="group"><h3>不参加 ${people(day.iso, "out").length}</h3>${nameChips(people(day.iso, "out"))}</div>
+            <div class="group"><h3>未回答 ${unanswered(day.iso).length}</h3>${nameChips(unanswered(day.iso))}</div>
+        </div></div>` : "";
+        return `<article class="day${hot ? " hot" : ""}${deleteMode ? " deleting" : ""}${showAdd ? " adding" : ""}">
+            ${setupButton(day.iso)}
+            ${trashButton(day.iso)}
+            <div class="day-row${opened ? " open" : ""}" data-open="${day.iso}">
+                <div class="when"><span class="fold" aria-hidden="true"></span><div><b>${day.md}</b><span class="dow ${day.kind}">${day.dow}</span>${day.extra ? `<div class="tag">${esc(day.extra)}</div>` : ""}</div></div>
+                <div>${meter(count.am, "am", amHot)}${meter(count.pm, "pm", pmHot)}${scale()}</div>
+                <div class="side">
+                    <span class="${pillClass}">${pill}</span>
+                    ${game ? "" : (amHot ? goButton(day, "am") : "")}
+                    ${game ? "" : (pmHot ? goButton(day, "pm") : "")}
+                </div>
+            </div>
+            ${detail}
+        </article>`;
+    }
+
+    function renderBoard() {
+        if (!roster.length) return '<p class="note">名簿が空です。</p>';
+        const rows = visible().map(day => dayCard(day)).join("");
+        return `<div class="toolbar">
+                <div class="linkbox"><code>回答用リンク ${esc(location.pathname)}</code><button type="button" id="copy">コピー</button></div>
+                ${manageButtons()}
+                ${showAdd ? addControls(false) : ""}
+                ${peoplePanel()}
+            </div>
+            ${rows || '<p class="note">候補日がありません。日を足してください。</p>'}`;
+    }
+
+    function renderAnswer() {
+        if (!roster.length) return '<p class="note">名簿が空です。</p>';
+        const who = personKey();
+        const named = Boolean(who);
+        const rows = visible().map(day => {
+            const current = effective(who, day.iso);
+            const tone = current.status === "all" ? " in" : current.status === "out" ? " out" : "";
+            const buttons = choiceMeta.map(([key, label]) => `<button type="button" class="${current.status === key ? "on " + key : ""}" data-set="${day.iso}" data-status="${key}"${named ? "" : " disabled"}>${label}</button>`).join("");
+            const by = current.status === "pending" ? `<div class="by">回答期日 ${dateField(`data-by="${day.iso}" value="${esc(current.by)}" class="has-value"`)}</div>` : "";
+            return `<div class="ans${tone}"><div class="top"><b>${day.md}</b><span class="dow ${day.kind}">${day.dow}</span>${day.extra ? `<span class="tag">${esc(day.extra)}</span>` : ""}</div><div class="choices">${buttons}</div>${by}</div>`;
+        }).join("");
+        const options = [`<option value="">名前を選んでください</option>`]
+            .concat(roster.map(player => `<option value="${esc(player.player_id)}"${!manualMode && String(player.player_id) === personId ? " selected" : ""}>${esc(player.name)}</option>`))
+            .concat([`<option value="${MANUAL}"${manualMode ? " selected" : ""}>手入力</option>`])
+            .join("");
+        const heading = boot.loggedIn ? "" : `<h1>${answerTitle}</h1>`;
+        const whoLabel = named ? "この名前で回答します" : (manualMode ? "名前を入力してください" : "先に自分の名前を選んでください");
+        return `<div class="phone-wrap"><div class="phone">
+            <header>${heading}<p>予定を回答してください。未定の場合は、回答期日を設定してください。</p></header>
+            <div class="who${named ? " picked" : " need"}"><p class="who-label">${whoLabel}</p><select id="person" aria-label="あなたの名前"${manualMode ? " hidden" : ""}>${options}</select><input id="person-manual" class="who-manual" value="${esc(manualName)}" placeholder="名前を入力" aria-label="名前を入力"${manualMode ? "" : " hidden"}></div>
+            ${rows}
+            <button type="button" class="send" id="send"${named ? "" : " disabled"}>回答を送る</button>
+        </div></div>`;
+    }
+
+    function nameField(index, current, frozen) {
+        const typed = current && !rosterNames.includes(current);
+        const off = frozen ? " disabled" : "";
+        const options = [`<option value="">選手名</option>`]
+            .concat(players.map(player => `<option value="${esc(player.name)}"${!typed && player.name === current ? " selected" : ""}>${esc(player.name)}</option>`))
+            .concat([`<option value="${MANUAL}"${typed ? " selected" : ""}>手入力</option>`]);
+        return `<select class="pp-select" data-name="${index}"${typed ? " hidden" : ""}${off}>${options.join("")}</select><input class="pp-manual" data-manual="${index}" value="${esc(typed ? current : "")}" placeholder="選手名を入力"${typed ? "" : " hidden"}${off}>`;
+    }
+    function posField(index, current, locked) {
+        const options = [['', '位置']].concat(POSITIONS.map(pos => [pos, pos])).map(([value, label]) => `<option value="${value}"${value === current ? " selected" : ""}>${label}</option>`).join("");
+        return `<select class="pp-select" data-pos="${index}"${locked ? " disabled" : ""}>${options}</select>`;
+    }
+    function faceHtml(index, name) {
+        if (name) return `<img class="pp-face" data-face="${index}" src="${esc(conditionSrc(name))}" alt=""><span class="pp-face" data-face-blank="${index}" hidden></span>`;
+        return `<img class="pp-face" data-face="${index}" alt="" hidden><span class="pp-face" data-face-blank="${index}"></span>`;
+    }
+    function supportHtml(names) {
+        if (!names.length) return "";
+        return `<div class="support"><p class="support-label">サポートメンバー</p><div class="support-list">${names.map(name => `<span class="support-name">${esc(name)}</span>`).join("")}</div></div>`;
+    }
+    function orderHtml(game, frozen) {
+        return game.lineup.map((row, index) => {
+            const locked = frozen;
+            const label = index === 9 ? tenthLabel(game) : String(index + 1);
+            const color = positionColors[row.p] || "#c5ced6";
+            return `<div class="pp-row"><span class="pp-num" data-num="${index}">${label}</span><span class="pp-name" data-name-pill="${index}" style="background:${color}">${nameField(index, row.n, frozen)}</span>${faceHtml(index, row.n.trim())}<span class="pp-pos" data-pos-pill="${index}" style="background:${color}">${posField(index, row.p, locked)}</span></div>`;
+        }).join("");
+    }
+    function viewValue(text) {
+        const shown = String(text || "").trim();
+        return `<p class="value${shown ? "" : " empty"}">${esc(shown || "未定")}</p>`;
+    }
+    function timeView(text) {
+        const shown = String(text || "").trim();
+        if (!shown) return viewValue(text);
+        return `<p class="value time">${esc(shown)}</p>`;
+    }
+    function uniformView(value) {
+        if (value !== "黒" && value !== "青") return viewValue(value);
+        const tone = value === "黒" ? "black" : "blue";
+        return `<p class="value"><span class="uni ${tone}">${esc(value)}</span></p>`;
+    }
+    function stadiumHits(query) {
+        const needle = String(query || "").replace(/\s+/g, "");
+        const entries = Object.entries(STADIUMS);
+        if (!needle) return entries;
+        return entries.filter(([name]) => {
+            const plain = name.replace(/\s+/g, "");
+            return plain.includes(needle) || needle.includes(plain);
+        });
+    }
+    function addressOptions(query) {
+        return stadiumHits(query).map(([name, address]) => `<option value="${esc(address)}" label="${esc(name)}"></option>`).join("");
+    }
+    function paintAddressList(iso, query, extra) {
+        const list = document.getElementById(`address-list-${iso}`);
+        if (!list) return;
+        list.innerHTML = addressOptions(query) + (extra || "");
+    }
+    function refreshAddressList(iso, query) {
+        if (!document.getElementById(`address-list-${iso}`)) return;
+        paintAddressList(iso, query, "");
+        const needle = String(query || "").trim();
+        addressToken += 1;
+        const token = addressToken;
+        clearTimeout(addressTimer);
+        if (needle.length < 2 || stadiumHits(query).length) return;
+        addressTimer = setTimeout(async () => {
+            try {
+                const res = await fetch("https://msearch.gsi.go.jp/address-search/AddressSearch?q=" + encodeURIComponent(needle));
+                if (!res.ok || token !== addressToken) return;
+                const data = await res.json();
+                if (token !== addressToken || !Array.isArray(data)) return;
+                const titles = [];
+                data.forEach(item => {
+                    const title = item && item.properties && item.properties.title;
+                    if (title && !titles.includes(title)) titles.push(title);
+                });
+                const extra = titles.map(title => `<option value="${esc(title)}" label="${esc(needle)}"></option>`).join("");
+                if (token === addressToken) paintAddressList(iso, query, extra);
+            } catch (err) {
+                /* 地図の候補が取れないときは登録済みの会場だけ出す */
+            }
+        }, 400);
+    }
+    function whenText(game) {
+        const time = String((game && game.timePB) || "").trim();
+        const match = time.match(/^(\d{1,2}):(\d{2})/);
+        if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
+        return game && game.slot === "pm" ? "午後" : "午前";
+    }
+    function paintWhen(iso, game) {
+        const card = gameCard(iso);
+        if (!card) return;
+        const slot = card.querySelector(".when-slot");
+        if (slot) slot.textContent = whenText(game);
+    }
+    function gameSummary(day, game, past, opened) {
+        const mark = past ? `<span class="fold-mark" aria-hidden="true">${opened ? "▲" : "▼"}</span>` : "";
+        const stadium = game.stadium.trim() ? game.stadium.trim() : "試合会場未定";
+        const cue = past ? `<span class="detail-cue">${opened ? "閉じる" : "詳細"}</span>` : "";
+        return `<span class="date-pill">${mark}${day.md}<span class="dow ${day.kind}">${day.dow}</span><span class="when-slot">${esc(whenText(game))}</span></span><span class="head-side">${cue}<span class="pill move">${esc(stadium)}</span></span>`;
+    }
+    function pastGameBlock(past) {
+        const pastBody = showPast
+            ? `<div class="past-list">${past.length ? past.map(day => gameCardHtml(day)).join("") : '<p class="note">過去の試合はまだありません。</p>'}</div>`
+            : "";
+        return `<div class="past-wrap"><button type="button" id="toggle-past" class="past-open${showPast ? " on" : ""}" aria-expanded="${showPast ? "true" : "false"}">過去日程${past.length ? `（${past.length}）` : ""}</button>${pastBody}</div>`;
+    }
+    function renderGame() {
+        const days = gameDays();
+        const past = pastGameDays();
+        const cards = days.map(day => gameCardHtml(day)).join("");
+        const main = days.length
+            ? `<div class="game-stack">${cards}</div>`
+            : '<p class="note">進める日を選ぶと、ここに試合カードが出ます。</p>';
+        return `${main}${pastGameBlock(past)}`;
+    }
+    function gameCardHtml(day) {
+            const past = day.iso < TODAY;
+            const opened = !past || Boolean(openPast[day.iso]);
+            const iso = day.iso;
+            const game = draftFor(iso);
+            const choices = [["練習試合", "練習試合"], ["公式戦", "公式戦"]];
+            const uniforms = ["黒", "青"];
+            const bats = ["情報なし", "ウレタン可", "金属・木製のみ"];
+            const eventShown = game.eventName === "公式戦" ? "公式戦" : "練習試合";
+            const batShown = bats.includes(game.bat) ? game.bat : "情報なし";
+            const stadiumOptions = Object.keys(STADIUMS).map(name => `<option value="${esc(name)}">`).join("");
+            const head = past ? "button" : "div";
+            const headAttr = past ? ` type="button" data-past="${iso}" aria-expanded="${opened ? "true" : "false"}"` : "";
+            const editing = editingGame === iso;
+            const form = editing ? `<div class="grid">
+                        <div class="field"><label>対戦相手</label><input data-field="opponent" value="${esc(game.opponent)}" placeholder="対戦相手を入力"></div>
+                        <div class="field"><label>試合の種類</label><select data-field="eventName">${choices.map(([value, label]) => `<option value="${value}"${eventShown === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>
+                        <div class="field"><label>試合会場</label><input data-field="stadium" list="stadium-list-${iso}" value="${esc(game.stadium)}" placeholder="試合会場を入力"><datalist id="stadium-list-${iso}">${stadiumOptions}</datalist></div>
+                        <div class="field"><label>住所</label><input data-field="address" list="address-list-${iso}" value="${esc(game.address)}" placeholder="会場名から候補が出ます"><datalist id="address-list-${iso}">${addressOptions(game.stadium)}</datalist></div>
+                        <div class="field"><label>ユニフォーム</label><select data-field="uniform">${uniforms.map(value => `<option${game.uniform === value ? " selected" : ""}>${value}</option>`).join("")}</select></div>
+                        <div class="field"><label>バット使用条件</label><select data-field="bat">${bats.map(value => `<option${batShown === value ? " selected" : ""}>${value}</option>`).join("")}</select></div>
+                        <div class="field"><label>集合時間</label><input data-field="timeGather" type="time" step="300" value="${esc(game.timeGather)}"></div>
+                        <div class="field"><label>試合開始</label><input data-field="timePB" type="time" step="300" value="${esc(game.timePB)}"></div>
+                        <div class="field wide"><label>備考</label><textarea data-field="bench" rows="2">${esc(game.bench)}</textarea></div>
+                    </div>` : `<div class="grid view">
+                        <div class="field"><label>対戦相手</label>${viewValue(game.opponent)}</div>
+                        <div class="field"><label>試合の種類</label>${viewValue(eventShown)}</div>
+                        <div class="field"><label>試合会場</label>${viewValue(game.stadium)}</div>
+                        <div class="field"><label>住所</label>${viewValue(game.address)}</div>
+                        <div class="field"><label>ユニフォーム</label>${uniformView(game.uniform)}</div>
+                        <div class="field"><label>バット使用条件</label>${viewValue(batShown)}</div>
+                        <div class="field"><label>集合時間</label>${timeView(game.timeGather)}</div>
+                        <div class="field"><label>試合開始</label>${timeView(game.timePB)}</div>
+                        <div class="field wide"><label>備考</label>${viewValue(game.bench)}</div>
+                    </div>`;
+            const order = opened ? `<div class="order-block">
+                    <p class="order-label">STARTING ORDER</p>
+                    <div class="pp-order${editing ? "" : " locked"}">${orderHtml(game, !editing)}<div class="support-box">${supportHtml(supportNames(iso, game))}</div></div>
+                </div>` : "";
+            return `<article class="game${editing ? " editing" : ""}${past && !opened ? " detail-closed" : ""}" data-game="${iso}">
+            <${head} class="game-head${past ? " past-toggle" : ""}"${headAttr}>
+                ${gameSummary(day, game, past, opened)}
+            </${head}>
+            <div class="game-body">
+                <div class="game-form">
+                    ${form}
+                    <div class="game-actions">
+                        <button type="button" class="game-edit" data-edit-game>${editing ? "反映する" : "編集する"}</button>
+                        ${editing ? `<button type="button" class="game-cancel" data-cancel-game>キャンセル</button>` : `<button type="button" class="game-delete" data-delete-game>削除する</button>`}
+                    </div>
+                </div>
+                ${order}
+            </div>
+        </article>`;
+    }
+
+    function gameDeleteAlert() {
+        if (!pendingGameDelete) return "";
+        const day = findGameDay(pendingGameDelete);
+        if (!day) return "";
+        const game = drafts[day.iso] || state.games[day.iso];
+        const when = whenText(game);
+        return `<div class="alert-back"><div class="alert-panel" role="alertdialog" aria-labelledby="game-delete-text"><p id="game-delete-text">${esc(day.md)}（${esc(day.dow)}）${when}の試合カードを削除しますか？</p><div class="alert-actions"><button type="button" id="game-delete-ok">削除</button><button type="button" id="game-delete-cancel">キャンセル</button></div></div></div>`;
+    }
+
+    function setupAlert() {
+        if (!pendingSetup) return "";
+        const day = visible().find(item => item.iso === pendingSetup);
+        if (!day) return "";
+        return `<div class="alert-back"><div class="alert-panel" role="alertdialog" aria-labelledby="setup-text"><p id="setup-text">${esc(day.md)}（${esc(day.dow)}）の試合を設定します。時間を選んでください。</p><div class="alert-actions setup"><button type="button" class="setup-slot" data-setup-slot="am">午前（~13:00）</button><button type="button" class="setup-slot" data-setup-slot="pm">午後（13:00~）</button><button type="button" id="setup-cancel">キャンセル</button></div></div></div>`;
+    }
+
+    function leaveAlert() {
+        if (!pendingLeave) return "";
+        return `<div class="alert-back"><div class="alert-panel" role="alertdialog" aria-labelledby="leave-text"><p id="leave-text">回答を送りますか？</p><div class="alert-actions"><button type="button" id="leave-ok">送る</button><button type="button" id="leave-cancel">キャンセル</button></div></div></div>`;
+    }
+
+    function removeAlert() {
+        if (!pendingRemove) return "";
+        const day = visible().find(item => item.iso === pendingRemove);
+        if (!day) return "";
+        return `<div class="alert-back"><div class="alert-panel" role="alertdialog" aria-labelledby="alert-text"><p id="alert-text">${esc(day.md)}（${esc(day.dow)}）を削除しますか？</p><div class="alert-actions"><button type="button" id="alert-ok">削除</button><button type="button" id="alert-cancel">キャンセル</button></div></div></div>`;
+    }
+
+    function paintFace(card, index, name) {
+        const img = card.querySelector(`[data-face="${index}"]`);
+        const blank = card.querySelector(`[data-face-blank="${index}"]`);
+        if (!img || !blank) return;
+        if (name) {
+            img.hidden = false;
+            img.src = conditionSrc(name);
+            blank.hidden = true;
+        } else {
+            img.hidden = true;
+            img.removeAttribute("src");
+            blank.hidden = false;
+        }
+    }
+    function paintOrder(card, game) {
+        game.lineup.forEach((row, index) => {
+            const color = positionColors[row.p] || "#c5ced6";
+            const namePill = card.querySelector(`[data-name-pill="${index}"]`);
+            const posPill = card.querySelector(`[data-pos-pill="${index}"]`);
+            if (namePill) namePill.style.background = color;
+            if (posPill) posPill.style.background = color;
+            if (index === 9) {
+                const num = card.querySelector('[data-num="9"]');
+                if (num) num.textContent = tenthLabel(game);
+            }
+            paintFace(card, index, row.n.trim());
+        });
+    }
+    function updateSupport(card, iso, game) {
+        const box = card.querySelector(".support-box");
+        if (box) box.innerHTML = supportHtml(supportNames(iso, game));
+    }
+    function snapTime(value) {
+        if (!value || !value.includes(":")) return value || "";
+        const [hour, minute] = value.split(":");
+        const snapped = Math.floor(parseInt(minute, 10) / 5) * 5;
+        if (Number.isNaN(snapped)) return value;
+        return `${hour}:${String(snapped).padStart(2, "0")}`;
+    }
+    function bindGame(iso) {
+        const card = gameCard(iso);
+        const game = drafts[iso];
+        if (!card || !game) return;
+        refreshAddressList(iso, game.stadium);
+        ["opponent", "eventName", "stadium", "address", "uniform", "bat", "timeGather", "timePB", "bench"].forEach(key => {
+            const el = card.querySelector(`[data-field="${key}"]`);
+            if (!el) return;
+            if (el.tagName === "SELECT") {
+                const wanted = game[key] === "使用可能バット情報なし" ? "情報なし" : game[key];
+                const index = [...el.options].findIndex(option => option.value === wanted);
+                if (index >= 0) el.selectedIndex = index;
+            }
+            const write = () => {
+                game[key] = el.value;
+                if (key === "stadium") {
+                    refreshAddressList(iso, el.value);
+                    if (STADIUMS[el.value]) {
+                        game.address = STADIUMS[el.value];
+                        const address = card.querySelector('[data-field="address"]');
+                        if (address) address.value = game.address;
+                    }
+                    const pill = card.querySelector(".pill.move");
+                    if (pill) pill.textContent = el.value.trim() ? el.value.trim() : "試合会場未定";
+                }
+                if (key === "timePB") paintWhen(iso, game);
+            };
+            el.addEventListener("input", write);
+            el.addEventListener("change", () => {
+                if (key === "timeGather" || key === "timePB") {
+                    el.value = snapTime(el.value);
+                    game[key] = el.value;
+                    if (key === "timePB") paintWhen(iso, game);
+                } else {
+                    write();
+                }
+            });
+        });
+        game.lineup.forEach((_, index) => {
+            const name = card.querySelector(`[data-name="${index}"]`);
+            const manual = card.querySelector(`[data-manual="${index}"]`);
+            const pos = card.querySelector(`[data-pos="${index}"]`);
+            if (name) name.addEventListener("change", () => {
+                if (name.value === MANUAL) {
+                    name.hidden = true;
+                    manual.hidden = false;
+                    if (rosterNames.includes(game.lineup[index].n)) game.lineup[index].n = "";
+                    manual.value = game.lineup[index].n;
+                    manual.focus();
+                } else {
+                    manual.hidden = true;
+                    name.hidden = false;
+                    manual.value = "";
+                    game.lineup[index].n = name.value;
+                }
+                paintFace(card, index, game.lineup[index].n.trim());
+                updateSupport(card, iso, game);
+            });
+            if (manual) {
+                manual.addEventListener("input", () => {
+                    game.lineup[index].n = manual.value;
+                    paintFace(card, index, manual.value.trim());
+                    updateSupport(card, iso, game);
+                });
+                manual.addEventListener("blur", () => {
+                    if (manual.value.trim()) return;
+                    manual.hidden = true;
+                    name.hidden = false;
+                    name.value = "";
+                    game.lineup[index].n = "";
+                    paintFace(card, index, "");
+                    updateSupport(card, iso, game);
+                });
+            }
+            if (pos) pos.addEventListener("change", () => {
+                game.lineup[index].p = pos.value;
+                paintOrder(card, game);
+                updateSupport(card, iso, game);
+            });
+        });
+        const edit = card.querySelector("[data-edit-game]");
+        if (edit) edit.addEventListener("click", () => {
+            if (iso < TODAY && !openPast[iso]) openPast[iso] = true;
+            if (editingGame !== iso) {
+                editingGame = iso;
+                render();
+                return;
+            }
+            run(async () => {
+                syncLineupFromForm(iso, game);
+                await postPoll({ action: "game", iso, game });
+                drafts[iso] = cloneGame(state.games[iso]);
+                editingGame = "";
+                setToast("反映しました。");
+            });
+        });
+        const cancel = card.querySelector("[data-cancel-game]");
+        if (cancel) cancel.addEventListener("click", () => {
+            if (busy) return;
+            delete drafts[iso];
+            editingGame = "";
+            render();
+        });
+        const removeGame = card.querySelector("[data-delete-game]");
+        if (removeGame) removeGame.addEventListener("click", () => {
+            if (busy) return;
+            pendingGameDelete = iso;
+            render();
+        });
+    }
+
+    function render() {
+        const scroll = window.scrollY;
+        let body = "";
+        if (!boot.loggedIn || view === "answer") body = renderAnswer();
+        else if (view === "game") body = renderGame();
+        else body = renderBoard();
+        app.innerHTML = (boot.loggedIn ? memberHead() : "") + toastHtml() + body + setupAlert() + gameDeleteAlert() + removeAlert() + leaveAlert() + personAlert();
+        bind();
+        window.scrollTo(0, scroll);
+        if (scrollTo) {
+            const row = document.querySelector(`[data-open="${scrollTo}"]`) || document.querySelector(`[data-game="${scrollTo}"]`);
+            if (row) row.scrollIntoView({ block: "nearest" });
+            scrollTo = "";
+        }
+    }
+    function bind() {
+        app.querySelectorAll(".date-field input").forEach(input => {
+            const sync = () => input.classList.toggle("has-value", Boolean(input.value));
+            sync();
+            input.addEventListener("input", sync);
+            input.addEventListener("change", sync);
+        });
+        app.querySelectorAll("[data-view]").forEach(button => {
+            button.addEventListener("click", () => {
+                if (busy) return;
+                const next = button.dataset.view;
+                if (view === "answer" && next !== "answer" && answerDirty(personKey())) {
+                    pendingLeave = next;
+                    render();
+                    return;
+                }
+                view = next;
+                pendingLeave = null;
+                setToast("");
+                render();
+            });
+        });
+        const copy = document.getElementById("copy");
+        if (copy) copy.addEventListener("click", async () => {
+            const url = location.origin + location.pathname;
+            try {
+                await navigator.clipboard.writeText(url);
+                setToast("回答用リンクをコピーしました。");
+            } catch (error) {
+                setToast("コピーできませんでした。", true);
+            }
+            render();
+        });
+        const toggleAdd = document.getElementById("toggle-add");
+        if (toggleAdd) toggleAdd.addEventListener("click", () => {
+            showAdd = !showAdd;
+            if (showAdd) showPeople = false;
+            if (!showAdd) pendingSetup = null;
+            render();
+        });
+        const toggleDelete = document.getElementById("toggle-delete");
+        if (toggleDelete) toggleDelete.addEventListener("click", () => {
+            deleteMode = !deleteMode;
+            if (deleteMode) showPeople = false;
+            if (!deleteMode) pendingRemove = null;
+            render();
+        });
+        const togglePeople = document.getElementById("toggle-people");
+        if (togglePeople) togglePeople.addEventListener("click", () => {
+            showPeople = !showPeople;
+            if (showPeople) {
+                showAdd = false;
+                deleteMode = false;
+                pendingSetup = null;
+                pendingRemove = null;
+            }
+            render();
+        });
+        const personAdd = document.getElementById("person-add-btn");
+        const personName = document.getElementById("person-add");
+        if (personAdd && personName) personAdd.addEventListener("click", () => run(async () => {
+            const name = personName.value.trim();
+            if (!name) throw new Error("名前を入力してください。");
+            if (roster.some(person => plainName(person.name) === plainName(name))) throw new Error("その名前はもう入っています。");
+            await postPoll({ action: "people", people: peoplePayload().concat([{ name }]) });
+            setToast("回答対象者を追加しました。");
+        }));
+        app.querySelectorAll("[data-person-remove]").forEach(button => {
+            button.addEventListener("click", () => {
+                pendingPerson = button.dataset.personRemove;
+                render();
+            });
+        });
+        const personRemoveCancel = document.getElementById("person-remove-cancel");
+        const personRemoveOk = document.getElementById("person-remove-ok");
+        if (personRemoveCancel) personRemoveCancel.addEventListener("click", () => {
+            pendingPerson = "";
+            render();
+        });
+        if (personRemoveOk) personRemoveOk.addEventListener("click", () => run(async () => {
+            const id = pendingPerson;
+            await postPoll({ action: "people", people: peoplePayload().filter(person => person.id !== id) });
+            pendingPerson = "";
+            setToast("回答対象者から外しました。");
+        }));
+        const pastToggle = document.getElementById("toggle-past");
+        if (pastToggle) pastToggle.addEventListener("click", () => {
+            showPast = !showPast;
+            render();
+        });
+        const add = document.getElementById("add-day");
+        const addDate = document.getElementById("add-date");
+        if (add && addDate) {
+            addDate.addEventListener("keydown", event => {
+                if (event.key === "Enter") add.click();
+            });
+            add.addEventListener("click", () => run(async () => {
+                const value = addDate.value;
+                if (!value) {
+                    setToast("足す日を選んでください。", true);
+                    return;
+                }
+                if (value < TODAY || value > RANGE_END) {
+                    setToast("足せるのは今日から来月末までです。", true);
+                    return;
+                }
+                if (visible().some(day => day.iso === value)) {
+                    openId = value;
+                    setToast("その日はもう並んでいます。", true);
+                    return;
+                }
+                await postPoll({ action: "add", iso: value, routine: isRoutine(value) });
+                openId = value;
+                scrollTo = value;
+                const date = parseDate(value);
+                setToast(`${date.getMonth() + 1}/${date.getDate()}を足しました。`);
+            }));
+        }
+        app.querySelectorAll("[data-past]").forEach(button => {
+            button.addEventListener("click", () => {
+                const iso = button.dataset.past;
+                if (openPast[iso]) {
+                    delete openPast[iso];
+                    if (activeGame === iso) activeGame = "";
+                    if (editingGame === iso) editingGame = "";
+                } else {
+                    Object.keys(openPast).forEach(key => { delete openPast[key]; });
+                    openPast[iso] = true;
+                    activeGame = iso;
+                }
+                render();
+            });
+        });
+        app.querySelectorAll("[data-open]").forEach(row => {
+            row.addEventListener("click", event => {
+                if (event.target.closest("[data-go], [data-remove], [data-setup]")) return;
+                openId = openId === row.dataset.open ? "" : row.dataset.open;
+                render();
+            });
+        });
+        function beginGame(iso, slot, verb) {
+            const day = visible().find(item => item.iso === iso);
+            run(async () => {
+                const game = cloneGame(drafts[iso] || state.games[iso] || blankGame(slot));
+                game.slot = slot;
+                await postPoll({ action: "game", iso, game });
+                drafts[iso] = cloneGame(state.games[iso]);
+                activeGame = iso;
+                scrollTo = iso;
+                view = "game";
+                pendingSetup = null;
+                const when = slot === "pm" ? "午後" : "午前";
+                setToast(day ? `${day.md}（${day.dow}）の${when}で${verb}。` : `${verb}。`);
+            });
+        }
+        app.querySelectorAll("[data-go]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.stopPropagation();
+                beginGame(button.dataset.go, button.dataset.slot, "進めました");
+            });
+        });
+        app.querySelectorAll("[data-setup]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.stopPropagation();
+                if (busy) return;
+                pendingSetup = button.dataset.setup;
+                render();
+            });
+        });
+        app.querySelectorAll("[data-setup-slot]").forEach(button => {
+            button.addEventListener("click", () => {
+                const iso = pendingSetup;
+                pendingSetup = null;
+                beginGame(iso, button.dataset.setupSlot, "設定しました");
+            });
+        });
+        const setupCancel = document.getElementById("setup-cancel");
+        if (setupCancel) setupCancel.addEventListener("click", () => {
+            pendingSetup = null;
+            render();
+        });
+        const gameDeleteOk = document.getElementById("game-delete-ok");
+        const gameDeleteCancel = document.getElementById("game-delete-cancel");
+        if (gameDeleteCancel) gameDeleteCancel.addEventListener("click", () => {
+            pendingGameDelete = null;
+            render();
+        });
+        if (gameDeleteOk) gameDeleteOk.addEventListener("click", () => {
+            const iso = pendingGameDelete;
+            const day = findGameDay(iso);
+            run(async () => {
+                await postPoll({ action: "clear-game", iso });
+                delete drafts[iso];
+                if (activeGame === iso) activeGame = "";
+                pendingGameDelete = null;
+                view = gameDays().length || pastGameDays().length ? "game" : "board";
+                setToast(day ? `${day.md}の試合カードを削除しました。` : "試合カードを削除しました。");
+            });
+        });
+        app.querySelectorAll("[data-remove]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.stopPropagation();
+                if (busy) return;
+                pendingRemove = button.dataset.remove;
+                render();
+            });
+        });
+        const alertOk = document.getElementById("alert-ok");
+        const alertCancel = document.getElementById("alert-cancel");
+        if (alertCancel) {
+            alertCancel.focus();
+            alertCancel.addEventListener("click", () => {
+                pendingRemove = null;
+                render();
+            });
+        }
+        app.querySelectorAll(".alert-back").forEach(alertBack => {
+            alertBack.addEventListener("click", event => {
+                if (event.target !== alertBack) return;
+                pendingRemove = null;
+                pendingSetup = null;
+                pendingGameDelete = null;
+                pendingLeave = null;
+                render();
+            });
+        });
+        if (alertOk) alertOk.addEventListener("click", () => {
+            const iso = pendingRemove;
+            const day = visible().find(item => item.iso === iso);
+            run(async () => {
+                await postPoll({ action: "remove", iso });
+                if (activeGame === iso) activeGame = "";
+                delete drafts[iso];
+                Object.keys(answerDraft).forEach(player => {
+                    if (answerDraft[player]) delete answerDraft[player][iso];
+                });
+                if (openId === iso) openId = "";
+                pendingRemove = null;
+                setToast(day ? `${day.md}を削除しました。` : "削除しました。");
+            });
+        });
+        const person = document.getElementById("person");
+        if (person) person.addEventListener("change", () => {
+            if (person.value === MANUAL) {
+                manualMode = true;
+                manualName = "";
+                personId = "";
+                focusManual = true;
+                rememberPerson("");
+                render();
+                return;
+            }
+            manualMode = false;
+            manualName = "";
+            personId = person.value;
+            rememberAnswering();
+            render();
+        });
+        const manual = document.getElementById("person-manual");
+        if (manual) {
+            const paintWho = () => {
+                const named = Boolean(personKey());
+                app.querySelectorAll("[data-set]").forEach(button => { button.disabled = !named; });
+                const send = document.getElementById("send");
+                if (send) send.disabled = !named;
+                const label = app.querySelector(".who-label");
+                if (label) label.textContent = named ? "この名前で回答します" : "名前を入力してください";
+                const box = app.querySelector(".who");
+                if (box) {
+                    box.classList.toggle("picked", named);
+                    box.classList.toggle("need", !named);
+                }
+            };
+            manual.addEventListener("input", () => {
+                const before = personKey();
+                const caret = manual.selectionStart;
+                manualName = manual.value;
+                const after = personKey();
+                if (before && after && before !== after && answerDraft[before]) {
+                    answerDraft[after] = Object.assign({}, answerDraft[before], answerDraft[after] || {});
+                    delete answerDraft[before];
+                }
+                rememberAnswering();
+                if (before === after) {
+                    paintWho();
+                    return;
+                }
+                manualCaret = caret;
+                render();
+            });
+            manual.addEventListener("blur", () => {
+                if (manual.value.trim()) return;
+                manualMode = false;
+                manualName = "";
+                rememberPerson("");
+                render();
+            });
+        }
+        if (focusManual || manualCaret != null) {
+            focusManual = false;
+            const field = document.getElementById("person-manual");
+            const caret = manualCaret;
+            manualCaret = null;
+            if (field) {
+                field.focus();
+                if (caret != null) field.setSelectionRange(caret, caret);
+            }
+        }
+        app.querySelectorAll("[data-set]").forEach(button => {
+            button.addEventListener("click", () => {
+                const who = personKey();
+                if (!who) return;
+                const iso = button.dataset.set;
+                const status = button.dataset.status;
+                const item = ensureDraft(who, iso);
+                item.status = item.status === status ? "" : status;
+                if (item.status === "pending" && !item.by) item.by = shiftDays(TODAY, 14);
+                render();
+            });
+        });
+        app.querySelectorAll("[data-by]").forEach(input => {
+            input.addEventListener("change", () => {
+                const who = personKey();
+                if (!who) return;
+                const item = ensureDraft(who, input.dataset.by);
+                item.status = "pending";
+                if (input.value) item.by = input.value;
+                render();
+            });
+        });
+        const leaveOk = document.getElementById("leave-ok");
+        const leaveCancel = document.getElementById("leave-cancel");
+        if (leaveCancel) {
+            leaveCancel.focus();
+            leaveCancel.addEventListener("click", () => {
+                pendingLeave = null;
+                render();
+            });
+        }
+        if (leaveOk) leaveOk.addEventListener("click", () => {
+            const next = pendingLeave;
+            run(async () => {
+                await submitAnswers();
+                pendingLeave = null;
+                view = next;
+                setToast("回答を反映しました。");
+            });
+        });
+        const send = document.getElementById("send");
+        if (send) send.addEventListener("click", () => run(async () => {
+            await submitAnswers();
+            if (boot.loggedIn) view = "board";
+            const key = personKey();
+            const player = roster.find(item => String(item.player_id) === key);
+            const sentName = player ? player.name : manualName.trim();
+            setToast(boot.loggedIn ? "回答を反映しました。" : `${sentName}の回答を送りました。`);
+        }));
+        if (view === "game" && boot.loggedIn) app.querySelectorAll("[data-game]").forEach(card => bindGame(card.dataset.game));
+    }
+
+    app.textContent = "読み込んでいます。";
+    fetch(boot.readApi, { cache: "no-store" })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok) throw new Error((data && data.error) || "読み込めませんでした。");
+            applyPoll(data);
+            render();
+        })
+        .catch(error => {
+            app.textContent = error.message || "読み込めませんでした。";
+        });
+})();

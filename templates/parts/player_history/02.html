@@ -1,0 +1,94 @@
+        {% if history_stats %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="vert-th">年度</th>
+                        <th class="vert-th">試合数</th>
+                        <th class="vert-th">打率</th>
+                        <th class="vert-th">打席</th>
+                        <th class="vert-th">打数</th>
+                        <th class="vert-th">安打</th>
+                        <th class="vert-th">本塁打</th>
+                        <th class="vert-th">打点</th>
+                        <th class="vert-th">得点</th>
+                        <th class="vert-th">盗塁</th>
+                        <th class="vert-th">出塁率</th>
+                        <th class="vert-th">長打率</th>
+                        <th class="vert-th">得点圏打率</th>
+                        <th>OPS</th>
+                        <th class="vert-th">二塁打</th>
+                        <th class="vert-th">三塁打</th>
+                        <th class="vert-th">三振</th>
+                        <th class="vert-th">四球</th>
+                        <th class="vert-th">死球</th>
+                        <th class="vert-th">犠打</th>
+                        <th class="vert-th">犠飛</th>
+                        <th class="vert-th">併殺打</th>
+                        <th class="vert-th">失策</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history_stats %}
+                    <tr>
+                        <td>{{ row['year']|int }}</td>
+                        <td>{{ row['games']|int }}</td>
+                        <td>{% set avg = row['batting_average']|float %}{% set val = '%.3f'|format(avg) %}{% if avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ row['plate_apperances']|int }}</td>
+                        <td>{{ row['at_bats']|int }}</td>
+                        <td>{{ row['hits']|int }}</td>
+                        <td>{{ row['homeruns']|int }}</td>
+                        <td>{{ row['runs_batted_in']|int }}</td>
+                        <td>{{ row['scores']|int }}</td>
+                        <td>{{ row['stolen_bases']|int }}</td>
+                        <td>{% set obp = row['obp']|float %}{% set val = '%.3f'|format(obp) %}{% if obp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set slg = row['slg']|float %}{% set val = '%.3f'|format(slg) %}{% if slg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% if row['year']|int <= 2023 %}－{% else %}{% set risp = row['risp_avg']|default(0)|float %}{% set val = '%.3f'|format(risp) %}{% if risp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}{% endif %}</td>
+                        <td>{% set ops = row['OPS']|float %}{% set val = '%.3f'|format(ops) %}{% if ops < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ row['doubles']|int }}</td>
+                        <td>{{ row['triples']|int }}</td>
+                        <td>{{ row['strike_outs']|int }}</td>
+                        <td>{{ row['bb']|int }}</td>
+                        <td>{{ row['hbp']|int }}</td>
+                        <td>{{ row['sacrifice_bants']|int }}</td>
+                        <td>{{ row['sacrifice_flies']|int }}</td>
+                        <td>{{ row['double_plays']|int }}</td>
+                        <td>{{ row['errors']|int }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot style="background-color: #fff3cd; border-top: 3px solid #666;">
+                    <tr>
+                        <td style="font-weight: bold;">通算</td>
+                        <td>{{ total_stats['games'] }}</td>
+                        <td>{% set avg = total_stats['batting_average']|float %}{% set val = '%.3f'|format(avg) %}{% if avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ total_stats['plate_apperances'] }}</td>
+                        <td>{{ total_stats['at_bats'] }}</td>
+                        <td>{{ total_stats['hits'] }}</td>
+                        <td>{{ total_stats['homeruns'] }}</td>
+                        <td>{{ total_stats['runs_batted_in'] }}</td>
+                        <td>{{ total_stats['scores'] }}</td>
+                        <td>{{ total_stats['stolen_bases'] }}</td>
+                        <td>{% set obp = total_stats['obp']|float %}{% set val = '%.3f'|format(obp) %}{% if obp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set slg = total_stats['slg']|float %}{% set val = '%.3f'|format(slg) %}{% if slg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set risp = total_stats['risp_avg']|float %}{% set val = '%.3f'|format(risp) %}{% if risp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set ops = total_stats['OPS']|float %}{% set val = '%.3f'|format(ops) %}{% if ops < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ total_stats['doubles'] }}</td>
+                        <td>{{ total_stats['triples'] }}</td>
+                        <td>{{ total_stats['strike_outs'] }}</td>
+                        <td>{{ total_stats['bb'] }}</td>
+                        <td>{{ total_stats['hbp'] }}</td>
+                        <td>{{ total_stats['sacrifice_bants'] }}</td>
+                        <td>{{ total_stats['sacrifice_flies'] }}</td>
+                        <td>{{ total_stats['double_plays'] }}</td>
+                        <td>{{ total_stats['errors'] }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div>過去の成績データはありません。</div>
+        {% endif %}
+    </div>
+</body>
+</html>

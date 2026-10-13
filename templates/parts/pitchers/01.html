@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投手成績 - {{ team_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #004d99;
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* 戻るボタンのデザイン */
+        .btn-back-container { margin: 10px 0 15px 0; display: flex; gap: 10px; flex-wrap: wrap; padding: 0; justify-content: flex-start; }
+        .btn-back { display: inline-block; padding: 8px 16px; background: #1a3c8d !important; color: #fff !important; text-decoration: none !important; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; font-family: 'Inter', Arial, sans-serif; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-back:hover { background: #122b66 !important; }
+
+        .page-header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        .page-title {
+            margin: 0;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        /* 絞り込みフィルターのデザイン（チーム成績と統一） */
+        .filter-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .filter-select {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .filter-checkbox-container {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .filter-btn-container {
+            text-align: center;
+        }
+
+        .btn-filter {
+            background-color: #337ab7;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            max-width: 300px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-filter:hover {
+

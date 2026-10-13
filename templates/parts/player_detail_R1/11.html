@@ -1,0 +1,106 @@
+            }
+        } catch (e) {
+            alert('通信エラーが発生しました。');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const rawAbilities = {
+            meet: parseInt("{{ player.get('meet_val', 50) }}"),
+            power: parseInt("{{ player.get('power_val', 50) }}"),
+            speed: parseInt("{{ player.get('speed_val', 50) }}"),
+            arm: parseInt("{{ player.get('arm_val', 50) }}"),
+            defense: parseInt("{{ player.get('defense_val', 50) }}"),
+            catching: parseInt("{{ player.get('catch_val', 50) }}")
+        };
+
+        const baseAbilities = {};
+        const previousSliderValues = {};
+
+        ['meet','power','speed','arm','defense','catching'].forEach(k => {
+            const el = document.querySelector(`.ability-slider[data-attr="${k}"]`);
+            const currentPlus = el ? parseInt(el.value, 10) : 0;
+            const plus = Number.isNaN(currentPlus) ? 0 : currentPlus;
+            baseAbilities[k] = rawAbilities[k] - plus;
+            previousSliderValues[k] = plus;
+        });
+
+        const initialAge = parseInt("{{ player.get('age', 25) }}");
+        const originalHoldPoint = (40 - initialAge) * 1;
+
+        function calculatePointCost(value) {
+            if (value <= 4) return value * 1; 
+            if (value <= 8) return 4 + (value - 4) * 2; 
+            if (value <= 12) return 12 + (value - 8) * 3; 
+            if (value <= 16) return 24 + (value - 12) * 4; 
+            return 0;
+        }
+
+        function getRank(value) {
+            if (value >= 90) return 'S'; if (value >= 80) return 'A'; if (value >= 70) return 'B';
+            if (value >= 60) return 'C'; if (value >= 50) return 'D'; if (value >= 40) return 'E';
+            if (value >= 20) return 'F'; return 'G';
+        }
+
+        function refresh() {
+            let totalUsed = 0;
+            ['meet', 'power', 'speed', 'arm', 'defense', 'catching'].forEach(attr => {
+                const val = previousSliderValues[attr];
+                totalUsed += calculatePointCost(val);
+
+                const currentTotal = baseAbilities[attr] + val;
+                
+                document.querySelectorAll(`.val-display-${attr}`).forEach(el => el.innerText = currentTotal);
+                
+                const rank = getRank(currentTotal);
+                document.querySelectorAll(`.rank-${attr}`).forEach(el => {
+                    el.innerText = rank;
+                    el.className = el.classList.contains('mob-ability-rank')
+                        ? `mob-ability-rank rank-${attr} rank-${rank}`
+                        : `rank-${attr} rank-${rank} pc-rank-shadow s-rank`;
+                });
+                
+                document.querySelectorAll(`.plus-val-${attr}`).forEach(el => el.innerText = `+${val}`);
+            });
+
+            const remaining = originalHoldPoint - totalUsed;
+            document.querySelectorAll('.hold-point-display').forEach(el => {
+                el.innerText = Math.max(0, remaining);
+                el.style.color = remaining < 0 ? '#ff0000' : '#ff8c00';
+            });
+            return remaining;
+        }
+
+        document.querySelectorAll('.ability-slider').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const attr = e.target.dataset.attr;
+                const newVal = parseInt(e.target.value);
+                const oldVal = previousSliderValues[attr];
+                
+                let tempTotal = 0;
+                ['meet','power','speed','arm','defense','catching'].forEach(k => {
+                    tempTotal += calculatePointCost(k === attr ? newVal : previousSliderValues[k]);
+                });
+
+                if (tempTotal > originalHoldPoint && newVal > oldVal) {
+                    document.querySelectorAll(`.ability-slider[data-attr="${attr}"]`).forEach(s => { if (s !== e.target) s.value = oldVal; });
+                    e.target.value = oldVal;
+                } else {
+                    previousSliderValues[attr] = newVal;
+                    document.querySelectorAll(`.ability-slider[data-attr="${attr}"]`).forEach(s => { if (s !== e.target) s.value = newVal; });
+                    refresh();
+                }
+            });
+            slider.addEventListener('pointerup', () => slider.blur());
+            slider.addEventListener('change', () => slider.blur());
+        });
+        refresh();
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyData = {{ monthly_avg_data | default('[null, null, 0.200, 0.250, 0.333, 0.280, 0.350, 0.310, null, null, null, null]') | safe }};
+    
+    const ctx = document.getElementById('monthlyAvgChart').getContext('2d');
+

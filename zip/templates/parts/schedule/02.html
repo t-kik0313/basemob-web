@@ -1,0 +1,111 @@
+
+        /* ゴミ箱 */
+        .trash-zone {
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f1f3f5 !important;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            color: var(--trash-gray) !important;
+            transition: all 0.2s;
+        }
+        .trash-zone.sortable-ghost { background: #ffe3e3 !important; border-color: var(--absent-red); color: var(--absent-red) !important; transform: scale(1.05); }
+        .trash-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .trash-label { font-size: 0.65rem; font-weight: bold; }
+
+        .card-footer { padding: 15px 20px; background: #f1f4f8 !important; }
+        .response-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .name-input, .pending-input { background: #fff !important; color: #333 !important; }
+        .name-input { flex: 1; min-width: 120px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .pending-input { width: 130px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .btn-s { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-attend { background: var(--attend-green); color: white !important; }
+        .btn-absent { background: var(--absent-red); color: white !important; }
+        .btn-pending { background: var(--pending-orange); color: #212529 !important; }
+
+        /* 管理フォーム */
+        .admin-form { background: #fff !important; padding: 30px; border-radius: 8px; border: 2px solid var(--primary-blue); margin-top: 50px; color: #333 !important; }
+        .admin-form.is-editing { background: #fff0dc !important; border-color: #e8a04a; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;}
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: var(--primary-blue) !important; }
+        .req { color: #e03131 !important; margin-left: 2px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff !important; color: #333 !important; }
+        
+        .lineup-editor { display: grid; grid-template-columns: 1fr; gap: 5px; background: #eee !important; padding: 10px; border-radius: 5px; }
+        .lineup-row { display: grid; grid-template-columns: 40px 1fr 100px; gap: 5px; align-items: center; color: #333 !important; }
+        .name-field { display: flex; flex-direction: column; gap: 4px; }
+        .name-manual[hidden] { display: none !important; }
+        .lineup-row span { font-weight: bold; text-align: center; }
+        .btn-submit { background: var(--primary-blue); color: white !important; width: 100%; padding: 16px; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+
+        /* 📱 スマホ専用レスポンシブデザイン */
+        @media (max-width: 768px) { 
+            .info-grid { grid-template-columns: 1fr; gap: 12px; margin-right: 0; min-height: 0; }
+            .event-main { margin-right: 0; }
+            .order-section { position: static; width: auto; right: auto; top: auto; } 
+            .attendance-container { flex-direction: column; }
+            .trash-zone { width: 100%; height: 50px; flex-direction: row; gap: 10px; }
+            .form-grid { grid-template-columns: 1fr; }
+            
+            /* 日時ボックス（カードヘッダー）のスマホ最適化・コンパクト化 */
+            .card-header { padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; background: #f4f7f9 !important; }
+            .date-display-box { display: flex; align-items: center; background: var(--primary-blue); color: white !important; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+            .date-display-box span { margin-left: 5px; }
+            
+            .event-main { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+            .event-title { font-size: 1.25rem; }
+            .opponent-name { font-size: 1.15rem; margin: 0; }
+            .uniform-badge { padding: 3px 8px; font-size: 0.75rem; align-self: flex-start; margin-top: 2px; }
+            
+            /* 🕒 集合時間・PBボックスのスマホ縮小化 */
+            .time-boxes-mobile { display: flex; gap: 8px; margin-top: 6px; width: 100%; box-sizing: border-box; }
+            .time-box { background: #f8f9fb; border: 1px solid #e0e6ed; border-radius: 6px; padding: 6px 8px; flex: 1; text-align: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); }
+            .time-box span:first-child { display: block; font-size: 0.65rem; color: #718096; font-weight: bold; margin-bottom: 2px; letter-spacing: 0.5px; }
+            .time-box span:last-child { display: block; font-size: 1.05rem; color: var(--primary-blue); font-weight: bold; font-family: 'Arial', sans-serif; }
+            .detail-label { font-size: 0.85rem; margin-bottom: 4px; }
+            
+            /* オーダー表のスマホ調整 */
+            .order-table { width: 244px; }
+            .order-table th { padding: 2px 3px; font-size: 0.7rem; }
+            .order-table td { padding: 2px 3px; font-size: 0.85rem; }
+            .order-table th:nth-child(2),
+            .col-name { width: 160px; max-width: 160px; }
+            .order-table th:first-child,
+            .col-num { width: 46px; max-width: 46px; font-size: 0.8rem; }
+            .col-pos { width: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="nav-header"><a href="/players" class="btn-back">トップページへ戻る</a></div>
+<header><div class="header-container"><h1>⚾スケジュール管理</h1></div></header>
+
+<div class="container">
+    <div id="schedule-future"></div>
+    <div class="admin-form" id="editor">
+        <h3 id="form-title" style="margin-top:0; color:var(--primary-blue);">➕ スケジュール登録・編集</h3>
+        <input type="hidden" id="edit-index" value="">
+        
+        <div class="form-grid">
+            <div class="form-group"><label>日付<span class="req">*</span></label><input type="date" id="f-date"></div>
+            <div class="form-group"><label>予定名</label><select id="f-eventname"><option value="">選択</option><option value="公式戦">公式戦</option><option value="練習試合">練習試合</option><option value="練習">練習</option></select></div>
+            <div class="form-group span-2"><label>対戦相手</label><input type="text" id="f-opponent"></div>
+            <div class="form-group"><label>ユニフォーム<span class="req">*</span></label><select id="f-uniform"><option value="青">青</option><option value="黒" selected>黒</option></select></div>
+            <div class="form-group"><label>バット条件</label><select id="f-bat"><option value="使用可能バット情報なし">使用可能バット情報なし</option><option value="ウレタン可" selected>ウレタン可</option><option value="金属・木製のみ">金属・木製のみ</option></select></div>
+            
+            <div class="form-group">
+                <label>集合時間<span class="req">*</span></label>
+                <input type="time" id="f-time-gather" step="300" onchange="snapTo5(this)">
+            </div>
+            <div class="form-group">
+                <label>試合開始<span class="req">*</span></label>
+                <input type="time" id="f-time-pb" step="300" onchange="snapTo5(this)">
+            </div>
+            
+            <div class="form-group"><label>球場名<span class="req">*</span></label><input list="stadium-list" id="f-stadium" oninput="autoFillAddr(this.value)"><datalist id="stadium-list"><option value="大田スタジアム"><option value="多摩川緑地広場野球場"><option value="駒沢オリンピック公園総合運動場野球場"><option value="等々力球場"><option value="世田谷公園野球場"></datalist></div>
+

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ team_name }} 日程調整</title>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='schedule_board.css') }}?v=49">
+</head>
+<body class="{{ 'member' if logged_in else 'public' }}">
+    {% if logged_in %}
+    <div class="nav-header"><a href="{{ url_for('players') }}" class="btn-back">トップページへ戻る</a></div>
+    {% endif %}
+    <div class="page" id="app"></div>
+    {% set icons = {
+        '絶好調': url_for('static', filename='condition_excellent.png'),
+        '好調': url_for('static', filename='condition_good.png'),
+        '普通': url_for('static', filename='condition_normal.png'),
+        '不調': url_for('static', filename='condition_poor.png'),
+        '絶不調': url_for('static', filename='condition_bad.png')
+    } %}
+    <script>
+        window.SCHEDULE_BOOT = {{ {
+            'readApi': schedule_api,
+            'pollApi': schedule_api ~ '/poll',
+            'loggedIn': true,
+            'eventsUrl': url_for('events'),
+            'roster': roster,
+            'conditions': conditions,
+            'icons': icons
+        } | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='schedule_board.js') }}?v=49"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="response-form">
+                            <input type="text" class="name-input" id="name-${idx}" placeholder="名前を入力">
+                            <button class="btn-s btn-attend" onclick="addResponse(${idx}, 'attend')">出席</button>
+                            <button class="btn-s btn-absent" onclick="addResponse(${idx}, 'absent')">欠席</button>
+                            <span style="color:#ccc;">|</span>
+                            <input type="text" class="pending-input" id="pending-date-${idx}" placeholder="回答期日(例:3/10)">
+                            <button class="btn-s btn-pending" onclick="addResponse(${idx}, 'pending')">保留</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        initSortable();
+    }
+
+    function askPendingDate(name) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('pending-date-modal');
+            const input = document.getElementById('pending-date-input');
+            const okBtn = document.getElementById('pending-date-ok');
+            const cancelBtn = document.getElementById('pending-date-cancel');
+            document.getElementById('pending-date-label').textContent = `${name}さんの回答期日を入力してください`;
+            input.value = '';
+            modal.hidden = false;
+            input.focus();
+            const finish = (value) => {
+                modal.hidden = true;
+                okBtn.onclick = null;
+                cancelBtn.onclick = null;
+                input.onkeydown = null;
+                resolve(value);
+            };
+            okBtn.onclick = () => {
+                const value = input.value.trim();
+                if (!value) {
+                    input.focus();
+                    return;
+                }
+                finish(value);
+            };
+            cancelBtn.onclick = () => finish(null);
+            input.onkeydown = (event) => {
+                if (event.key === 'Enter') okBtn.onclick();
+                if (event.key === 'Escape') cancelBtn.onclick();
+            };
+        });
+    }
+
+    function initSortable() {
+        events.forEach((ev, idx) => {
+            const zones = document.querySelectorAll(`.sortable-list[data-idx="${idx}"]`);
+            zones.forEach(zone => {
+                new Sortable(zone, {
+                    group: `shared-${idx}`,
+                    animation: 150,
+                    delay: 200,             
+                    delayOnTouchOnly: true, 
+                    draggable: '.name-tag', 
+                    filter: '.ignore-drag', 
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function (evt) {
+                        const itemEl = evt.item;
+                        const toEl = evt.to;
+                        const fromEl = evt.from;
+                        if (toEl === fromEl) return; 
+
+                        const newStatus = toEl.dataset.status;
+                        const oldStatus = fromEl.dataset.status;
+                        const name = itemEl.dataset.name;
+                        const dateStr = itemEl.dataset.date || '';
+
+                        if ((oldStatus === 'attend' || oldStatus === 'absent') && newStatus === 'pending') {
+                            setTimeout(() => {
+                                askPendingDate(name).then((newDate) => {
+                                    if (!newDate) {
+                                        render();
+                                        return;
+                                    }
+                                    if (oldStatus === 'attend') ev.attendees = ev.attendees.filter(n => personName(n) !== name);
+                                    if (oldStatus === 'absent') ev.absentees = ev.absentees.filter(n => personName(n) !== name);
+                                    if (!ev.pendings) ev.pendings = [];
+                                    ev.pendings.push(stampPerson(name, { d: newDate }));
+                                    updateToServer();
+                                });
+                            }, 0);
+                            return;
+                        }
+
+                        if (oldStatus === 'attend') ev.attendees = ev.attendees.filter(n => personName(n) !== name);
+                        if (oldStatus === 'absent') ev.absentees = ev.absentees.filter(n => personName(n) !== name);
+                        if (oldStatus === 'pending') ev.pendings = ev.pendings.filter(p => p.n !== name);
+
+                        if (newStatus === 'attend') {
+                            ev.attendees.push(stampPerson(name));
+                        } else if (newStatus === 'absent') {
+                            ev.absentees.push(stampPerson(name));
+                        } else if (newStatus === 'pending') {
+                            if (!ev.pendings) ev.pendings = [];
+                            ev.pendings.push(stampPerson(name, { d: dateStr || '未定' }));
+                        } else if (newStatus === 'trash') {
+                            itemEl.remove(); 
+                        }
+                        
+                        updateToServer(); 
+                    }
+                });
+            });
+        });
+    }
+
+    function addResponse(idx, type) {
+        const input = document.getElementById(`name-${idx}`);
+        const name = input.value.trim();
+        if(!name) { alert("名前を入力してください。"); return; }
+        let dateStr = "";
+        if (type === 'pending') {
+            const dateInput = document.getElementById(`pending-date-${idx}`);
+            dateStr = dateInput.value.trim();
+            if(!dateStr) { alert("保留にする場合は、回答期日を入力してください。"); return; }
+        }
+        if (!events[idx].pendings) events[idx].pendings = [];
+        events[idx].attendees = events[idx].attendees.filter(n => personName(n) !== name);
+        events[idx].absentees = events[idx].absentees.filter(n => personName(n) !== name);
+        events[idx].pendings = events[idx].pendings.filter(p => p.n !== name);
+        if(type === 'attend') events[idx].attendees.push(stampPerson(name));
+        else if (type === 'absent') events[idx].absentees.push(stampPerson(name));
+        else if (type === 'pending') events[idx].pendings.push(stampPerson(name, { d: dateStr }));
+        input.value = "";
+        if(document.getElementById(`pending-date-${idx}`)) document.getElementById(`pending-date-${idx}`).value = "";
+        
+        updateToServer();
+    }
+
+    function editEvent(idx) {
+        const ev = events[idx];
+        document.getElementById('edit-index').value = idx;
+        document.getElementById('f-date').value = ev.date;
+        setEventName(ev.eventName);
+        document.getElementById('editor').classList.add('is-editing');
+        document.getElementById('f-opponent').value = ev.opponent;
+

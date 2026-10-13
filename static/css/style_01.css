@@ -1,0 +1,102 @@
+/* General Styles */
+body {
+font-family: 'Corporate Logo Bold', sans-serif;
+background-color: #f0f2f5;
+color: #333;
+line-height: 1.6;
+}
+
+.main-container {
+padding: 20px;
+width: 100%;
+max-width: none;
+}
+
+.player-detail-container {
+background: #fff;
+border-radius: 12px;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+padding: 30px;
+width: calc(100% - 10vw);
+margin-left: 5vw;
+margin-right: 5vw;
+margin-top: 20px;
+position: relative;
+}
+
+/* Player Header Section */
+.player-header {
+display: flex;
+align-items: center;
+gap: 30px;
+border-bottom: 2px solid #eee;
+padding-bottom: 20px;
+margin-bottom: 30px;
+}
+
+.player-image-box {
+width: 150px;
+height: 150px;
+border-radius: 50%;
+overflow: hidden;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+flex-shrink: 0;
+}
+
+.player-image {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.player-info-box {
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
+
+.player-name {
+font-size: 3em;
+font-weight: bold;
+color: #2c3e50;
+margin: 0;
+}
+
+.player-meta {
+font-size: 1.2em;
+color: #7f8c8d;
+margin: 5px 0 0;
+}
+
+.action-buttons {
+margin-top: 15px;
+}
+
+.btn {
+padding: 10px 20px;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+font-weight: bold;
+text-decoration: none;
+display: inline-block;
+transition: background-color 0.3s;
+}
+
+.btn-primary {
+background-color: #3498db;
+color: #fff;
+}
+
+.btn-primary:hover {
+background-color: #2980b9;
+}
+
+.btn-danger {
+background-color: #e74c3c;
+color: #fff;
+}
+
+.btn-danger:hover {
+background-color: #c0392b;
+}

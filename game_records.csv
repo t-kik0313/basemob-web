@@ -1,0 +1,5 @@
+player_id,game_date,game_id,stadium,is_official,result,direction,runner,strikes,bases,is_4th_bat,is_hr,advancing_runner,vs_left,multi_hit,sayonara,sb,runs,errors,game_type,batting_order,fielding_position,rbi,gidp
+11,2026-03-08,1,2,,BB,,0,0,,,,,0,,0,0,2,0,practice,2,2,3.0,0.0
+11,2026-03-08,1,2,,2B,9,F,0,,,,,0,,0,0,0,0,practice,2,2,0.0,0.0
+11,2026-03-08,1,2,,O,3,1.2,0,,,,,0,,0,0,0,0,practice,2,2,0.0,0.0
+11,2026-03-08,1,2,,O,1,1.3,2,,,,,0,,0,0,0,0,practice,2,2,0.0,0.0

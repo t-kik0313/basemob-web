@@ -1,0 +1,20 @@
+                        {% for skill_name, s_type in active_skills %}
+                            <div class="pc-spec-item skill-{{ s_type }}">{{ skill_name }}</div>
+                        {% endfor %}
+                        {% for i in range(24 - active_skills|length) %}
+                            <div class="pc-spec-item skill-empty"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="pc-status-footer-row">
+            <div class="pc-age-point-area">
+                <div class="pc-status-box">
+                    <span style="color:#000; font-weight:bold;">年齢</span>
+                    <span style="font-size:2.4rem; font-weight:bold; color:#1e90ff;">{{ player.get('age', 25) }}</span>
+                </div>
+                <div class="pc-status-box">
+                    <span style="color:#000; font-weight:bold;">年齢ポイント</span>
+

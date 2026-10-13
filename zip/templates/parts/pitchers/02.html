@@ -1,0 +1,101 @@
+            background-color: #286090;
+        }
+
+        /* テーブルデザイン */
+        .table-container {
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px; /* 項目が多いのでPC向けの幅を広めに確保 */
+            text-align: center;
+            font-size: 13px; /* 項目が多いので文字を少しだけ小さく */
+        }
+        
+        .stats-table th {
+            background-color: #f8f9fa;
+            color: #333;
+            padding: 12px 8px;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+            border-top: 1px solid #ddd;
+            white-space: nowrap;
+        }
+        
+        .stats-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: #444;
+        }
+        
+        .stats-table tbody tr:hover { background-color: #eef2f7; }
+        
+        .player-name {
+            text-align: left !important;
+            font-weight: bold;
+            color: var(--primary-color);
+            white-space: nowrap;
+            position: sticky;
+            left: 0;
+            background-color: #fff;
+            border-right: 2px solid #eee;
+        }
+        /* スクロール時に見やすくするための設定 */
+        .stats-table tbody tr:hover .player-name { background-color: #eef2f7; }
+
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            .filter-select { flex: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 戻るボタンエリア -->
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <button onclick="window.history.back();" class="btn-back">◀ 選手詳細へ戻る</button>
+        </div>
+
+        <div class="page-header">
+            <h1 class="page-title"><i class="fa-solid fa-baseball"></i> 投手成績</h1>
+        </div>
+
+        <!-- 絞り込みフィルター（チーム成績と同じ仕様） -->
+        <div class="filter-section">
+            <form action="#" method="GET">
+                <div class="filter-row">
+                    <select name="year" class="filter-select">
+                        <option value="">年度</option>
+                        <option value="2026">2026年</option>
+                        <option value="2025">2025年</option>
+                    </select>
+                    <select name="game_type" class="filter-select">
+                        <option value="">試合属性</option>
+                        <option value="公式戦">公式戦</option>
+                        <option value="練習試合">練習試合</option>
+                    </select>
+                    <select name="opponent" class="filter-select">
+                        <option value="">対戦チーム</option>
+                        <option value="Aチーム">Aチーム</option>
+                        <option value="Bチーム">Bチーム</option>
+                    </select>
+                    <select name="tournament" class="filter-select">
+                        <option value="">大会名</option>
+                        <option value="春季大会">春季大会</option>
+                        <option value="秋季大会">秋季大会</option>
+                    </select>
+                </div>
+                <div class="filter-checkbox-container">
+                    <label style="cursor: pointer;">
+                        <input type="checkbox" name="include_total" value="1"> 通算成績に含む試合のみ
+                    </label>
+                </div>
+                <div class="filter-btn-container">
+

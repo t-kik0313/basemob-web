@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ team_name }} スケジュール</title>
+    <style>
+        body { margin: 0; background: #f4f7f9; color: #1f2937; font-family: "Segoe UI", sans-serif; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 48px; }
+        h1 { margin: 0 0 18px; color: #1a3a83; }
+        article { background: #fff; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+        .date { color: #1a3a83; font-weight: bold; }
+        .opponent { margin: 6px 0 0; font-size: 1.3rem; }
+        .empty { color: #667085; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>{{ team_name }} スケジュール</h1>
+        {% if events %}
+            {% for event in events %}
+            <article>
+                <div class="date">{{ event.date }}{% if event.time %} {{ event.time }}{% endif %}</div>
+                <p class="opponent">{% if event.opponent %}vs {{ event.opponent }}{% endif %}</p>
+            </article>
+            {% endfor %}
+        {% else %}
+            <p class="empty">公開されている予定はありません。</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>年間成績詳細</title>
+    <style>
+        body { background: #f4f7f9; color: #333; font-family: 'Inter', Arial, sans-serif; }
+        
+        .container { max-width: 1200px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 32px; position: relative; }
+        
+        /* ★スマホ対応: 画面幅が狭い場合は余白を小さくする */
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 15px; }
+            h2 { font-size: 1.4rem !important; text-align: center; }
+        }
+
+        h2 { color: #004d99; margin-bottom: 24px; font-size: 1.8rem; text-align: center; }
+        
+        .table-wrapper { overflow-x: auto; width: 100%; } /* ★スマホ対応: 横スクロール可能に */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; min-width: 1000px; font-size: 0.95rem; } /* ★最低幅を確保して潰れを防止 */
+        
+        th, td { border: 1px solid #ccc; text-align: center; vertical-align: middle; }
+        td { padding: 8px 4px; white-space: nowrap; }
+        th { background: #e5e7eb; color: #004d99; padding: 10px 4px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+        
+        .vert-th {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            white-space: nowrap;
+            margin: 0 auto;
+            letter-spacing: 1px;
+        }
+
+        tr:nth-child(even) { background: #f9f9f9; }
+        tr.reg-split td { padding: 0; height: 8px; background: #fff; border-left: none; border-right: none; border-bottom: none; border-top: 3px solid #1a3c8d; }
+        
+        .btn-back-container { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+        .btn-back { display: inline-block !important; padding: 8px 16px !important; background: #1a3c8d !important; color: #fff !important; text-decoration: none !important; border-radius: 4px !important; font-weight: bold !important; font-size: 0.85rem !important; border: none !important; cursor: pointer !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; transition: background 0.2s !important; }
+        .btn-back:hover { background: #122b66 !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <button onclick="window.history.back();" class="btn-back">◀ 選手詳細へ戻る</button>
+        </div>
+
+        <h2>チーム年間成績一覧</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>名前</th>
+                        <th class="vert-th">試合数</th>
+                        <th class="vert-th">打率</th>
+                        <th class="vert-th">打席</th>
+                        <th class="vert-th">打数</th>
+                        <th class="vert-th">安打</th>
+                        <th class="vert-th">本塁打</th>
+                        <th class="vert-th">打点</th>
+                        <th class="vert-th">得点</th>
+                        <th class="vert-th">盗塁</th>
+                        <th class="vert-th">出塁率</th>
+                        <th class="vert-th">長打率</th>
+                        <th class="vert-th">得点圏打率</th>
+                        <th>OPS</th>
+                        <th class="vert-th">二塁打</th>
+                        <th class="vert-th">三塁打</th>
+                        <th class="vert-th">三振</th>
+                        <th class="vert-th">四球</th>
+                        <th class="vert-th">死球</th>
+                        <th class="vert-th">犠打</th>
+                        <th class="vert-th">犠飛</th>
+                        <th class="vert-th">併殺打</th>
+                        <th class="vert-th">敵失</th>
+                        <th class="vert-th">失策</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(split=false) %}
+                    {% for stat in stats %}
+                    {% if regulation_pa and not stat.qualified and not ns.split and not loop.first %}
+                    <tr class="reg-split"><td colspan="24"></td></tr>
+                    {% set ns.split = true %}
+                    {% endif %}
+                                        <tr class="player" data-qualified="{{ 1 if stat.qualified else 0 }}">
+                        <td style="font-weight: bold;">
+                            {% if stat.id %}
+                            <a href="{{ url_for('player_detail_R1', player_id=stat.id) }}" style="color: #004d99; text-decoration: none;">{{ stat.name }}</a>
+                            {% else %}
+                            {{ stat.name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ stat.get('games', 0) }}</td>
+                        <td>{% set avg = stat.get('avg', 0)|float %}{% set val = '%.3f'|format(avg) %}{% if avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ stat.get('pa', 0) }}</td>
+                        <td>{{ stat.get('ab', 0) }}</td>
+                        <td>{{ stat.get('hits', 0) }}</td>
+                        <td>{{ stat.get('hr', 0) }}</td>
+                        <td>{{ stat.get('rbi', 0) }}</td>
+                        <td>{{ stat.get('runs', 0) }}</td>
+                        <td>{{ stat.get('sb', 0) }}</td>
+                        <td>{% set obp = stat.get('obp', 0)|float %}{% set val = '%.3f'|format(obp) %}{% if obp < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set slg = stat.get('slg', 0)|float %}{% set val = '%.3f'|format(slg) %}{% if slg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set risp_avg = stat.get('risp_avg', 0)|float %}{% set val = '%.3f'|format(risp_avg) %}{% if risp_avg < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{% set ops = stat.get('ops', 0)|float %}{% set val = '%.3f'|format(ops) %}{% if ops < 1 %}.{{ val[2:] }}{% else %}{{ val }}{% endif %}</td>
+                        <td>{{ stat.get('doubles', 0) }}</td>
+                        <td>{{ stat.get('triples', 0) }}</td>
+                        <td>{{ stat.get('so', 0) }}</td>
+                        <td>{{ stat.get('bb', 0) }}</td>
+                        <td>{{ stat.get('hbp', 0) }}</td>
+                        <td>{{ stat.get('sh', 0) }}</td>
+                        <td>{{ stat.get('sf', 0) }}</td>
+                        <td>{{ stat.get('gidp', 0) }}</td>
+                        <td>{{ stat.get('errors', 0) }}</td> <!-- 敵失（攻撃時の相手のエラー） -->
+                        <td>{{ stat.get('fielding_errors', 0) }}</td> <!-- 🌟 失策（守備時の自分のエラー） -->
+                    </tr>
+                    {% endfor %}
+

@@ -1,0 +1,82 @@
+    { n: "対左投手", w: "45px", f: p => { let r = p.left_rank || 'D'; return `<span class="rank-${r}">${r}</span>`; }},
+    { n: "盗塁", w: "45px", f: p => { let r = p.steal_rank || 'D'; return `<span class="rank-${r}">${r}</span>`; }},
+    { n: "走塁", w: "45px", f: p => { let r = p.run_rank || 'D'; return `<span class="rank-${r}">${r}</span>`; }},
+    
+    { n: "プルヒッター", f: p => p.t_pull ? "○" : "" },
+    { n: "チャンスメーカー", f: p => p.t_chancemaker ? "○" : "" },
+    { n: "流し打ち", f: p => p.t_nagashi ? "○" : "" },
+    { n: "広角打法", f: p => p.t_koukaku ? "○" : "" },
+    { n: "初球○", f: p => p.t_firststrike ? "○" : "" },
+    { n: "対エース○", f: p => p.t_vsace ? "○" : "" },
+    { n: "粘り打ち", f: p => p.t_nebari ? "○" : "" },
+    
+    { n: "4番○", f: p => p.t_bat4 ? "○" : "" },
+    { n: "固め打ち", f: p => p.t_katame ? "○" : "" },
+    { n: "内野安打○", f: p => p.t_infield ? "○" : "" },
+    
+    { n: "満塁男", f: p => p.t_manrui ? "○" : "" },
+    { n: "バント○", f: p => p.t_bunt ? "○" : "" },
+    { n: "サヨナラ男", f: p => p.t_sayonara ? "○" : "" }
+];
+
+const grid = document.getElementById('main-grid');
+grid.style.gridTemplateColumns = cols.map(c => c.w || "35px").join(" ");
+
+cols.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'cell header'; d.textContent = c.n; grid.appendChild(d);
+});
+
+rawPlayerData.sort((a,b)=>a.no-b.no).forEach(p => {
+    cols.forEach(col => {
+        const d = document.createElement('div');
+        d.className = 'cell';
+        const result = col.f(p);
+        if (result instanceof HTMLElement) {
+            if (result.tagName === 'SELECT') {
+                const attrKey = col.n === "弾道" ? 'dan' : col.n === "ケガしにくさ" ? 'injury' : col.n === "送球" ? 'throw' : 'catcher';
+                
+                result.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    if (attrKey === 'dan') {
+                        e.target.style.color = trajColors[val];
+                    } else {
+                        e.target.className = `rank-${val}`; 
+                    }
+                    // ★ localStorageではなくサーバーへ直接送信！
+                    updateAttr(p.player_id || p.id || p.no, attrKey, val, e.target);
+                });
+            }
+            d.appendChild(result);
+        } else {
+            d.innerHTML = result === "○" ? '<span class="blue-mark">○</span>' : result;
+        }
+        grid.appendChild(d);
+    });
+});
+
+// 汎用属性更新APIへの送信
+async function updateAttr(playerId, attrKey, val, selectElement) {
+    const originalBg = selectElement.style.backgroundColor;
+    selectElement.style.backgroundColor = '#fff3cd'; // 処理中
+    try {
+        const res = await fetch('/api/update_attr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: playerId, attr: attrKey, value: val })
+        });
+        if (res.ok) {
+            selectElement.style.backgroundColor = '#d4edda'; // 成功
+            setTimeout(() => { selectElement.style.backgroundColor = originalBg; }, 800);
+        } else {
+            alert('保存に失敗しました。');
+            selectElement.style.backgroundColor = '#f8d7da'; // 失敗
+        }
+    } catch (e) {
+        console.error("更新エラー:", e);
+        selectElement.style.backgroundColor = '#f8d7da';
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定性的な特殊能力</title>
+    <style>
+        body { margin: 0; background: #f4f7fb; color: #1f2937; font-family: "Segoe UI", sans-serif; }
+        .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+        a.back { display: inline-block; margin-bottom: 16px; background: #1a3c8d; color: #fff; text-decoration: none; font-weight: bold; padding: 8px 14px; border-radius: 6px; }
+        h1 { margin: 0 0 8px; color: #1a3c8d; }
+        p.note { margin: 0 0 18px; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #d7e3f4; padding: 10px 12px; text-align: center; }
+        th { background: #e8f3ff; }
+        td.name { text-align: left; font-weight: bold; }
+        button { margin-top: 16px; background: #1a3c8d; color: #fff; border: 0; border-radius: 6px; padding: 10px 18px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <a class="back" href="{{ url_for('players') }}">◀ 選手一覧へ戻る</a>
+        <h1>定性的な特殊能力</h1>
+        <p class="note">成績からは判定しない特殊能力です。チェックを入れて保存すると、選手詳細の青特殊能力に出ます。</p>
+        <form method="post">
+            {% for key, label in abilities %}
+            <input type="hidden" name="kind_keys" value="{{ key }}">
+            {% endfor %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>背番号</th>
+                        <th>選手</th>
+                        {% for key, label in abilities %}
+                        <th>{{ label }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                    <tr>
+                        <td>{{ player.no }}</td>
+                        <td class="name">{{ player.name }}</td>
+                        {% for key, label in abilities %}
+                        <td>
+                            <input type="checkbox" name="{{ key }}" value="{{ player.player_id }}" {% if player.flags[key] %}checked{% endif %} aria-label="{{ player.name }} {{ label }}">
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="note">このチームに種類を足すときは、名前を入れて保存します。</p>
+            <input type="text" name="new_kind" placeholder="新しい特殊能力の名前" style="padding: 8px; border: 1px solid #d7e3f4; border-radius: 6px;">
+            <button type="submit">保存する</button>
+        </form>
+    </div>
+</body>
+</html>
