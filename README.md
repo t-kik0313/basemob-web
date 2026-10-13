@@ -120,6 +120,8 @@ basemob-web/
 
 ファイル名に `notuse` が含まれていますが、旧 DB の鍵も現在の起動処理で使用します。どちらかの初期化に失敗すると、実装上は両方の DB クライアントが無効になります。認証鍵は別途用意し、Git にコミットしないでください。
 
+`.gitignore` の `firebase_key*.json` により、プロジェクト直下と `zip/` などのサブディレクトリ内にある同名の鍵ファイルを Git 管理から除外しています。鍵を別名で保存する場合は、その名前も除外対象に追加してください。すでに追跡されているファイルには `.gitignore` は適用されません。
+
 ### 3. チーム情報の準備
 
 既存チームを使う場合は、`teams/{team_id}` に `slug`、`login_id`、`password_hash` が設定されていることを確認します。新しいチームを作る場合は、サービスアカウントを設定したうえで次を実行します。
@@ -199,6 +201,27 @@ basemob-web/
 - `python database.py` は SQLite の `players` テーブルを削除して初期データを作ります。Firestore アプリの起動には不要です。
 
 ## トラブルシューティング
+
+### GitHub への push と認証鍵
+
+HTTPS の Git 操作では GitHub アカウントのパスワードは使用できません。GitHub CLI のブラウザ認証を使用する場合は、次の手順で設定します（macOS / Homebrew）。
+
+```bash
+brew install gh
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git
+git push origin main
+```
+
+ブラウザでリポジトリへの書き込み権限を持つアカウントにログインします。詳しくは [GitHub CLI の認証手順](https://cli.github.com/manual/gh_auth_login) を参照してください。
+
+`GH013` / `Push cannot contain secrets` と表示された場合は、GitHub Push Protection が送信対象のコミット内に認証鍵を検出しています。現在のファイルを削除したり `.gitignore` を追加したりするだけでは、過去のコミットにある鍵は除去されません。鍵が含まれるすべてのコミットから除外する必要があります。[GitHub の対応手順](https://docs.github.com/en/code-security/how-tos/secure-your-secrets/work-with-leak-prevention/push-protection-on-the-command-line)
+
+このリポジトリでは、初回コミットに含まれていた `zip/firebase_key.json` と `zip/firebase_key_notuse.json` を `main` の履歴から除外し、ローカルファイルを保持したうえで `.gitignore` を追加しました。履歴変更時の旧コミットはローカルのバックアップ参照 `refs/original/refs/heads/main` に残っているため、その参照には鍵が含まれます。`git push origin main` ではこのバックアップ参照は送信されません。旧履歴を含む `git push --mirror` やバックアップの共有は避けてください。
+
+実際の認証鍵を検出された場合は、保護の解除リンクで公開を許可せず、履歴から除外してください。漏えい対策として対象のサービスアカウント鍵を Google Cloud 側で失効・再発行し、ローカルの鍵ファイルも更新することを推奨します。
+
+### アプリの起動・データ表示
 
 | 症状 | 確認事項 |
 | --- | --- |
