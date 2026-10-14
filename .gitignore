@@ -1,5 +1,6 @@
 # Firebase service account credentials (including copies in subdirectories)
 firebase_key*.json
+config/credentials/
 
 # Local Python environments and caches
 .venv/
@@ -12,6 +13,8 @@ __pycache__/
 .env.*
 !.env.example
 debug_log*.txt
+var/log/
+var/cache/players_data_*.json
 
 # Migration backups
 backups/

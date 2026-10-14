@@ -1,8 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useScreenStore } from './screen.js';
-import { screenApi } from '../api.js';
-import router, { screens } from '../router.js';
+import { useScreenStore } from '../../src/stores/screen.js';
+import { screenApi } from '../../src/api.js';
+import router, { screens } from '../../src/router.js';
 afterEach(()=>vi.unstubAllGlobals());
 it('全18画面と年度クエリを既存 URL に対応させる',()=>{
   expect(screens).toHaveLength(18);

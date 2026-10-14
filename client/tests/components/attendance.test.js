@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createRouter, createMemoryHistory } from 'vue-router';
-import AttendanceForm from './AttendanceForm.vue';
-import EventsView from '../views/EventsView.vue';
-import ScheduleView from '../views/ScheduleView.vue';
-import DataTable from './DataTable.vue';
-import { dateWindow } from '../scheduling/dates.js';
+import AttendanceForm from '../../src/components/AttendanceForm.vue';
+import EventsView from '../../src/views/EventsView.vue';
+import ScheduleView from '../../src/views/ScheduleView.vue';
+import DataTable from '../../src/components/DataTable.vue';
+import { dateWindow } from '../../src/scheduling/dates.js';
 
 afterEach(() => vi.unstubAllGlobals());
 async function router() {

@@ -18,6 +18,7 @@ from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from webapp.config import BASE_DIR
+from config.paths import SCHEDULE_FILE
 from webapp.firebase import db, db_old
 from webapp.services.player_view import IDENTITY_FIELDS
 from webapp.services.schedule_view import bind_schedule_people
@@ -106,7 +107,7 @@ def migrate_ryunen():
                 'player_id': int(source.get('player_id') or doc_id),
                 'name': source.get('name') or '',
             })
-        csv_path = os.path.join(BASE_DIR, 'schedule_data.csv')
+        csv_path = str(SCHEDULE_FILE)
         if schedule_existed and isinstance((original_schedule or {}).get('items'), list):
             raw_items = original_schedule['items']
         else:

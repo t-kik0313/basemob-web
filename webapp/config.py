@@ -1,9 +1,11 @@
-import os
 import logging
+from config.paths import ROOT_DIR, CACHE_DIR, LOG_DIR
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JSON_PLAYERS = os.path.join(BASE_DIR, 'players_data.json')
-LOG_FILE = os.path.join(BASE_DIR, 'debug_log.txt')
+BASE_DIR = str(ROOT_DIR)
+JSON_PLAYERS = str(CACHE_DIR / 'players_data.json')
+LOG_FILE = str(LOG_DIR / 'debug_log.txt')
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 REGULATION_PA_COEF = 1.8
 USER_ID = "ryunen"

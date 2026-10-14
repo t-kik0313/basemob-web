@@ -46,7 +46,7 @@
 | `python -m webapp.create_team ...` | `scripts/create_team.py` | `python -m scripts.create_team ...` |
 | `python -m webapp.migrate_team` | `scripts/migrate_team.py` | `python -m scripts.migrate_team` |
 
-CSV 取り込みの BASE_DIR はリポジトリ直下を維持します。年度成績の再取り込みスクリプトは従来どおり実行時のカレントディレクトリにある鍵・CSV を参照します。運用コマンドはリポジトリ直下から実行してください。
+CSV は `data/imports/`、認証鍵は `config/credentials/` に配置します。共通の `config/paths.py` が配置を解決するため、ファイル参照は作業ディレクトリに依存しません。運用コマンドはリポジトリ直下から実行してください。
 
 ## Vue SPA への移行
 
@@ -64,3 +64,26 @@ CSV 取り込みの BASE_DIR はリポジトリ直下を維持します。年度
 - 分割前後の登録ルート、公開画面 HTML、日程・イベント JSON 応答が一致することを確認。
 
 テストは実 Firestore に接続せず、実認証鍵も読みません。本番データを使った操作・運用スクリプトの実書き込みは検証対象外です。
+
+## ディレクトリ全体の整理
+
+| 配置 | 役割 |
+| --- | --- |
+| 直下 | README・requirements・Git 設定・app.py・旧運用コマンドの互換入口 |
+| `webapp/` | Flask。routes・presentation・services・repositories・teams・scheduling・stats に役割分割 |
+| `client/src/` | Vue の画面・部品・API・状態・日付計算 |
+| `client/tests/` | Vue / JavaScript のテスト。src の階層に対応 |
+| `tests/` | モック DB を使う Python テスト |
+| `scripts/` | チーム作成・移行・CSV 取り込みなどの運用処理 |
+| `config/paths.py` | アプリと運用スクリプトで共有するパス。DB 接続を行わない |
+| `config/credentials/` | Firebase 認証鍵。Git 管理対象外 |
+| `data/imports/` | 基本情報・打席・年度成績・測定の入力 CSV |
+| `data/reference/` | 従来予定と既存の参考 CSV |
+| `var/cache/` | 集計 JSON。既存 RYUNEN データを保持し、チーム別キャッシュも同じ場所に生成 |
+| `var/log/` | 実行ログ。Git 管理対象外 |
+| `static/` | ビルド済み SPA・CSS・画像。既存 URL と DB の画像パスを維持 |
+| `01.doc/design/` | 設計書 |
+| `01.doc/assets/` | 参考画像（調子.png） |
+| `backups/` | 移行処理のバックアップ。Git 管理対象外 |
+
+直下の11ファイルを上記へ移動し、内容は保持しました。app.py、requirements.txt、README.md、.gitignore、migrate.py、upload_csv.py は入口・案内・互換性のため直下に残します。既存 Python の互換 import も継続します。画像の DB 保存値や公開 URL に影響するため、既存 static 資産の移動は行いません。実行時の cache・log ディレクトリはアプリ起動時に作成します。

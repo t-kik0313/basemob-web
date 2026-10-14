@@ -17,5 +17,5 @@ export default defineConfig(({ command }) => ({
       '/static': { target: apiTarget },
     },
   },
-  test: { environment: 'jsdom', include: ['src/**/*.test.js'] },
+  test: { environment: 'jsdom', include: ['tests/**/*.test.js'] },
 }));

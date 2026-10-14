@@ -274,6 +274,30 @@ class RefactorCompatibilityTests(unittest.TestCase):
             self.assertEqual(response.status_code, 500)
             self.assertEqual(response.json, {"error": "データの読み込み・保存に失敗しました。"})
 
+    def test_relocated_local_files_ignore_working_directory(self):
+        from config.paths import ROOT_DIR, SCHEDULE_FILE
+        from webapp.repositories.schedule import read_schedule
+        from webapp.stats import json_cache
+        self.assertEqual(ROOT_DIR, ROOT)
+        self.assertTrue(SCHEDULE_FILE.is_absolute())
+        with TemporaryDirectory() as directory:
+            folder = Path(directory)
+            schedule_file = folder / "reference" / "schedule_data.csv"
+            schedule_file.parent.mkdir()
+            schedule_file.write_text(json.dumps([{"date": "2026-10-17"}]))
+            cache_file = folder / "cache" / "players_data.json"
+            cache_file.parent.mkdir()
+            cache_file.write_text(json.dumps([{"player_id": 1, "name": "検証選手"}]))
+            previous = os.getcwd()
+            try:
+                os.chdir(directory)
+                with patch("webapp.repositories.schedule.SCHEDULE_FILE", schedule_file):
+                    self.assertEqual(read_schedule("DEMO"), [{"date": "2026-10-17"}])
+                with patch("webapp.stats.json_cache.JSON_PLAYERS", str(cache_file)):
+                    self.assertEqual(json_cache.get_players_data_json()[0]["name"], "検証選手")
+            finally:
+                os.chdir(previous)
+
     def test_date_windows_and_game_normalization(self):
         self.assertEqual(poll.window_end(date(2026, 12, 14)), date(2027, 1, 31))
         self.assertEqual(poll.event_window_end(date(2026, 10, 14)), date(2027, 4, 30))

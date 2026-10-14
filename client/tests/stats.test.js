@@ -1,6 +1,6 @@
 import { expect, it, vi, afterEach } from 'vitest';
-import { plateSummary, rate } from './stats.js';
-import { dateWindow, scheduleDays } from './scheduling/dates.js';
+import { plateSummary, rate } from '../src/stats.js';
+import { dateWindow, scheduleDays } from '../src/scheduling/dates.js';
 afterEach(()=>vi.useRealTimers());
 it('安打と打数・得点圏・左右打者の引張方向を維持する',()=>{
   const records=[{result:'H',direction:3,runner:'2',strikes:0},{result:'O',direction:7,runner:0,strikes:2},{result:'BB',direction:3,runner:2}];

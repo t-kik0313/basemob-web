@@ -10,12 +10,11 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import math
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from config.paths import IMPORT_DIR, FIREBASE_KEY
 
 # Firebase接続
 try:
-    cred = credentials.Certificate(os.path.join(BASE_DIR, 'firebase_key.json'))
+    cred = credentials.Certificate(str(FIREBASE_KEY))
     firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
@@ -23,7 +22,7 @@ except Exception as e:
     exit()
 
 def upload_csv_to_firestore(csv_filename, collection_name, id_col=None):
-    csv_path = os.path.join(BASE_DIR, csv_filename)
+    csv_path = str(IMPORT_DIR / csv_filename)
     if not os.path.exists(csv_path):
         print(f"⏭️ スキップ: {csv_filename} が見つかりません。")
         return

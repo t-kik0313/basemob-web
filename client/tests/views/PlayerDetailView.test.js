@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
-import PlayerDetailView from './PlayerDetailView.vue';
+import PlayerDetailView from '../../src/views/PlayerDetailView.vue';
 afterEach(()=>vi.unstubAllGlobals());
 it('旧画面の PC・モバイル補正を同期し、ポイント超過を拒否して既存 API に保存する',async()=>{
   const router=createRouter({history:createMemoryHistory(),routes:[{path:'/t/:teamSlug/player_detail_R1/:playerId',component:PlayerDetailView}]});await router.push('/t/demo/player_detail_R1/1');await router.isReady();

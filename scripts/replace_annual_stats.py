@@ -9,12 +9,13 @@ import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+from config.paths import IMPORT_DIR, FIREBASE_OLD_KEY
 
 # --- 設定エリア ---
 # 鍵ファイルを「メインの鍵」に変更して試してみる
-KEY_FILE = 'firebase_key_notuse.json'
+KEY_FILE = str(FIREBASE_OLD_KEY)
 COLLECTION_NAME = 'annual_stats'
-CSV_FILE = 'annual_stats_input.csv'
+CSV_FILE = str(IMPORT_DIR / 'annual_stats_input.csv')
 # ----------------
 
 def upload_csv_to_firebase():

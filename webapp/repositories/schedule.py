@@ -1,5 +1,6 @@
 """旧 tenant.py の処理を役割別に分割。"""
 import os
+from config.paths import SCHEDULE_FILE
 from firebase_admin import firestore
 from webapp.firebase import db
 from webapp.repositories.references import schedule_ref
@@ -14,8 +15,7 @@ def read_schedule(team_id=None):
         items = (doc.to_dict() or {}).get('items')
         if isinstance(items, list):
             return items
-    from webapp.config import BASE_DIR
-    path = os.path.join(BASE_DIR, 'schedule_data.csv')
+    path = str(SCHEDULE_FILE)
     if not os.path.exists(path):
         return []
     import json

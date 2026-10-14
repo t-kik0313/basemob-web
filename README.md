@@ -64,14 +64,14 @@ flowchart TB
 | `teams/{team_id}/games/{game_id}` | 試合結果。投手データは `pitchers` サブコレクションまたは試合文書内にも対応 |
 | `teams/{team_id}/schedule/board` | 日程・イベント・出欠を含む `poll` と、従来形式の予定 `items` |
 | 旧 Firestore | `basic_info`、`players`、`game_records`、`annual_stats`、`annual_stats_detail`、`record_meeting` |
-| `players_data.json` / `players_data_{team_id}.json` | 成績・能力値の集計キャッシュ。`RYUNEN` は `players_data.json` を使用 |
+| `var/cache/players_data.json` / `var/cache/players_data_{team_id}.json` | 成績・能力値の集計キャッシュ。`RYUNEN` は `players_data.json` を使用 |
 | `static/player_images/{slug}/` | アップロードした選手画像 |
 | `static/scoreboard_images/{slug}/` | アップロードしたスコアボード画像 |
-| `debug_log.txt` | アプリケーションログ |
+| `var/log/debug_log.txt` | アプリケーションログ |
 
 現在は新旧 DB を併用しています。`webapp/data.py` の旧データ取得対象は旧 DB から読み込み、名簿・試合・日程などのチーム別データは新 DB を使用します。従来の打席記録の保存・更新・削除処理は新 DB のトップレベル `game_records` を操作するため、旧 DB からの読み込み先とは異なります。
 
-`schedule_data.csv` は拡張子が CSV ですが、予定の読み込み処理では JSON 配列として扱います。アプリの主データストアは Firestore です。
+`data/reference/schedule_data.csv` は拡張子が CSV ですが、予定の読み込み処理では JSON 配列として扱います。アプリの主データストアは Firestore です。
 
 ## 技術構成
 
@@ -112,13 +112,13 @@ python -m pip install firebase-admin
 
 ### 2. Firebase の認証鍵
 
-対象プロジェクトの Firestore を利用できるサービスアカウント鍵を、プロジェクト直下に配置します。
+対象プロジェクトの Firestore を利用できるサービスアカウント鍵を、`config/credentials/` に配置します。ディレクトリがなければ `mkdir -p config/credentials` で作成してください。
 
 ```text
 basemob-web/
-├── app.py
-├── firebase_key.json          # 新 DB（BaseMob）用
-└── firebase_key_notuse.json   # 旧 DB（baseball-site）用
+└── config/credentials/
+    ├── firebase_key.json          # 新 DB（BaseMob）用
+    └── firebase_key_notuse.json   # 旧 DB（baseball-site）用
 ```
 
 ファイル名に `notuse` が含まれていますが、旧 DB の鍵も現在の起動処理で使用します。どちらかの初期化に失敗すると、実装上は両方の DB クライアントが無効になります。認証鍵は別途用意し、Git にコミットしないでください。
@@ -198,14 +198,22 @@ basemob-web/
 │   ├── src/stores/         # Pinia の画面データ・読込状態
 │   ├── src/scheduling/     # 日付・祝日・候補日計算
 │   ├── src/router.js       # Vue Router の URL 定義
+│   ├── tests/              # フロントエンドのテスト
 │   └── vite.config.js      # ビルド・開発用 API プロキシ・テスト
 ├── static/
 │   ├── spa/                # Flask が配信するビルド済み HTML・JS・CSS
 │   ├── style.css           # 既存の共通スタイル
 │   └── player_images/      # 選手画像などの静的資産
-├── 01.doc/design/          # 設計書
-├── players_data.json       # 集計キャッシュ
-├── *.csv                   # 取り込み用・参照用のローカルデータ
+├── 01.doc/
+│   ├── design/             # 設計書
+│   └── assets/             # 設計・画面の参考画像
+├── config/                 # 共通パス・Git 管理対象外の認証鍵
+├── data/
+│   ├── imports/            # CSV 取り込み入力
+│   └── reference/          # 従来予定・参考データ
+├── var/
+│   ├── cache/              # 集計キャッシュ
+│   └── log/                # 実行ログ（Git 管理対象外）
 ├── migrate.py              # 旧 CSV 取り込みコマンドの互換入口
 ├── upload_csv.py           # 旧年度成績取り込みコマンドの互換入口
 └── backups/                # チーム移行前のバックアップ
@@ -215,8 +223,8 @@ basemob-web/
 
 - `webapp/config.py` で規定打席の既定値やログ出力先、署名用 `SECRET_KEY` などを設定します。実際のチームログイン情報は Firestore のチーム文書を参照します。環境変数や `.env` による設定読み込みは実装されていません。
 - `app.py` はデバッグ有効のローカル開発用サーバーです。本番運用ではデバッグを無効にした WSGI サーバーと HTTPS、固有の署名鍵を用意してください。
-- 画像、集計キャッシュ、ログはサーバーのローカルファイルに書き込みます。運用先では書き込み権限と、画像を保持する永続ストレージが必要です。
-- `python migrate.py` はルート直下の CSV を新 DB のトップレベルコレクションへ取り込みます。チーム別のサブコレクションへの移行ではありません。
+- 画像、集計キャッシュ、ログはサーバーのローカルファイルに書き込みます。運用先では`var/` への書き込み権限と、画像を保持する永続ストレージが必要です。
+- `python migrate.py` は`data/imports/` の CSV を新 DB のトップレベルコレクションへ取り込みます。チーム別のサブコレクションへの移行ではありません。
 - `python upload_csv.py` は旧 DB の `annual_stats` を一度削除してから CSV データを再登録します。実行前に接続先とバックアップを確認してください。
 - `python -m webapp.migrate_team` は `RYUNEN` 専用です。名簿・試合件数などの固定条件を確認し、`backups/` に移行前のデータを保存します。汎用のチーム作成には `create_team` を使用してください。
 
@@ -237,7 +245,7 @@ git push origin main
 
 `GH013` / `Push cannot contain secrets` と表示された場合は、GitHub Push Protection が送信対象のコミット内に認証鍵を検出しています。現在のファイルを削除したり `.gitignore` を追加したりするだけでは、過去のコミットにある鍵は除去されません。鍵が含まれるすべてのコミットから除外する必要があります。[GitHub の対応手順](https://docs.github.com/en/code-security/how-tos/secure-your-secrets/work-with-leak-prevention/push-protection-on-the-command-line)
 
-このリポジトリでは、初回コミットに含まれていた `zip/firebase_key.json` と `zip/firebase_key_notuse.json` を `main` の履歴から除外し、ローカルファイルを保持したうえで `.gitignore` を追加しました。その後、旧コピーの `zip/` を整理し、鍵はアプリが参照するプロジェクト直下に移しました。履歴変更時の旧コミットはローカルのバックアップ参照 `refs/original/refs/heads/main` に残っているため、その参照には鍵が含まれます。`git push origin main` ではこのバックアップ参照は送信されません。旧履歴を含む `git push --mirror` やバックアップの共有は避けてください。
+このリポジトリでは、初回コミットに含まれていた `zip/firebase_key.json` と `zip/firebase_key_notuse.json` を `main` の履歴から除外し、ローカルファイルを保持したうえで `.gitignore` を追加しました。その後、旧コピーの `zip/` を整理し、鍵は一度プロジェクト直下へ移し、現在は `config/credentials/` に配置しています。履歴変更時の旧コミットはローカルのバックアップ参照 `refs/original/refs/heads/main` に残っているため、その参照には鍵が含まれます。`git push origin main` ではこのバックアップ参照は送信されません。旧履歴を含む `git push --mirror` やバックアップの共有は避けてください。
 
 実際の認証鍵を検出された場合は、保護の解除リンクで公開を許可せず、履歴から除外してください。漏えい対策として対象のサービスアカウント鍵を Google Cloud 側で失効・再発行し、ローカルの鍵ファイルも更新することを推奨します。
 
@@ -249,8 +257,8 @@ git push origin main
 | 起動時に Firebase 接続エラーが出る | 2つの鍵ファイルの配置、対象プロジェクト、Firestore の利用権限を確認する |
 | 認証が通らない | 新 DB のチーム文書の `slug`、`login_id`、`password_hash` を確認する |
 | 名簿や試合が空になる | 対象チームの `players`・`games` サブコレクションとログを確認する |
-| 過去成績・能力値が表示されない | 旧 DB のデータ、集計キャッシュ、`debug_log.txt` を確認する。空の新チームには過去データは自動作成されない |
-| 画像やキャッシュを保存できない | プロジェクト直下と `static/` 配下の書き込み権限を確認する |
+| 過去成績・能力値が表示されない | 旧 DB のデータ、集計キャッシュ、`var/log/debug_log.txt` を確認する。空の新チームには過去データは自動作成されない |
+| 画像やキャッシュを保存できない | `var/` と `static/` 配下の書き込み権限を確認する |
 
 本番デプロイの設定は含まれていません。
 
@@ -294,3 +302,5 @@ python -m unittest discover -s tests -v
 詳しくは [SPA と API の設計](01.doc/design/api-client.md) を参照してください。
 
 全画面を白いカード、控えめな枠線・影、ゆとりある余白のモダンなデザインで統一しています。選手詳細の選手情報部分はパワプロ風デザインを維持し、上部ヘッダーと余白は他ページと共通です。「トップページへ戻る」ボタンは廃止しています。ホーム上部のタブは全18画面に共通で表示し、読み込み中・API エラー時にも利用できます。
+
+直下には README、依存定義、起動入口、Git 設定、既存の互換コマンドを残します。ファイル配置は [構成変更の対応表](01.doc/design/structure.md)、データの用途は [data/README](data/README.md)、認証鍵は [config/README](config/README.md)、実行時ファイルは [var/README](var/README.md) を参照してください。

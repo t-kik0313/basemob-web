@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { pointCost, detailSituations, positionGradient } from './model.js';
+import { pointCost, detailSituations, positionGradient } from '../../../src/components/player-detail/model.js';
 it('元の補正ポイント単価と各段階の境界を維持する',()=>{
   expect([0,4,5,8,9,12,13,16].map(pointCost)).toEqual([0,4,6,12,15,24,28,40]);
 });

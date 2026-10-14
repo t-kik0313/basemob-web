@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import ScheduleBoard from './ScheduleBoard.vue';
-import ScheduleGameCard from './ScheduleGameCard.vue';
-import AttendanceForm from '../AttendanceForm.vue';
+import ScheduleBoard from '../../../src/components/schedule/ScheduleBoard.vue';
+import ScheduleGameCard from '../../../src/components/schedule/ScheduleGameCard.vue';
+import AttendanceForm from '../../../src/components/AttendanceForm.vue';
 it('旧ボードの7人判定・午前午後の集計と未回答者を表示する',async()=>{
   const people=Array.from({length:9},(_,index)=>({id:String(index+1),name:`選手${index+1}`}));
   const answers=Object.fromEntries(people.slice(0,7).map(person=>[person.id,{status:'all'}]));

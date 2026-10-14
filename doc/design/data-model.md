@@ -257,12 +257,12 @@ erDiagram
 
 | パス | 形式・役割 |
 | --- | --- |
-| `players_data.json` | 選手辞書の JSON 配列。チーム未指定 / RYUNEN 用 |
-| `players_data_{team_id}.json` | その他チームのキャッシュ。未生成なら読取は空配列 |
+| `var/cache/players_data.json` | 選手辞書の JSON 配列。チーム未指定 / RYUNEN 用 |
+| `var/cache/players_data_{team_id}.json` | その他チームのキャッシュ。未生成なら読取は空配列 |
 | `static/player_images/{slug}/{player_id}.{ext}` | 選手画像。jpeg は jpg に変換したファイル名で保存 |
 | `static/scoreboard_images/{slug}/{game_id相当}.{ext}` | スコアボード画像。ファイル名の禁止文字を置換 |
-| `schedule_data.csv` | 従来の予定 `items` の読み込みフォールバック。内容は JSON 配列 |
-| `debug_log.txt` | DEBUG レベルの追記ログ |
+| `data/reference/schedule_data.csv` | 従来の予定 `items` の読み込みフォールバック。内容は JSON 配列 |
+| `var/log/debug_log.txt` | DEBUG レベルの追記ログ |
 | `backups/ryunen-{timestamp}/before.pkl` | 専用移行処理前のチーム・選手・試合・予定の pickle バックアップ |
 
 キャッシュは元属性に `id`、`age`、`holding_points`、能力値（`meet_val,power_val,speed_val,arm_val,defense_val,catch_val`）、ランク・特殊能力・成績等を追加します。手動編集用の主データではありません。`update_json_from_csv` という名称ですが、現在の集計入力は主に Firestore です。

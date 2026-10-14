@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
-import App from './App.vue';
+import App from '../src/App.vue';
 afterEach(()=>vi.unstubAllGlobals());
 it('選手詳細を含む画面遷移・読込中・API エラーでもホーム上部のタブを残す',async()=>{
   const router=createRouter({history:createMemoryHistory(),routes:[{path:'/t/:teamSlug/players',name:'players',component:{template:'<div>一覧</div>'}},{path:'/t/:teamSlug/player_detail_R1/:playerId',name:'detail',component:{template:'<div>詳細</div>'}}]});
