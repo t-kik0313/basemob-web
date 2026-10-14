@@ -101,7 +101,7 @@ def page_route(rule, **options):
         @wraps(function)
         def page(*args, **kwargs):
             if request.method in ("GET", "HEAD"):
-                return send_from_directory(app.static_folder, "app/shell.html")
+                return send_from_directory(app.static_folder, "spa/index.html")
             return execute_api(function, *args, **kwargs)
 
         @wraps(function)

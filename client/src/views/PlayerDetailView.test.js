@@ -1,0 +1,20 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
+import { createPinia } from 'pinia';
+import { createRouter, createMemoryHistory } from 'vue-router';
+import PlayerDetailView from './PlayerDetailView.vue';
+afterEach(()=>vi.unstubAllGlobals());
+it('旧画面の PC・モバイル補正を同期し、ポイント超過を拒否して既存 API に保存する',async()=>{
+  const router=createRouter({history:createMemoryHistory(),routes:[{path:'/t/:teamSlug/player_detail_R1/:playerId',component:PlayerDetailView}]});await router.push('/t/demo/player_detail_R1/1');await router.isReady();
+  const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({ok:true})});vi.stubGlobal('fetch',fetchMock);
+  const wrapper=mount(PlayerDetailView,{props:{data:{player:{player_id:1,name:'選手A',age:26,meet_val:70,power_val:70,speed_val:60,arm_val:60,defense_val:50,catch_val:50},active_skills:[],records:[]}},global:{plugins:[createPinia(),router],stubs:{RecentForm:true}}});
+  expect(wrapper.findAll('.ability-slider')).toHaveLength(12);expect(wrapper.find('.ability-slider').element.disabled).toBe(true);
+  await wrapper.find('[aria-label="能力補正を編集"]').trigger('click');
+  await wrapper.find('.ability-slider').setValue('4');
+  expect(wrapper.find('.pc-layout .val-display-meet').text()).toBe('74');expect(wrapper.find('.mobile-layout .val-display-meet').text()).toBe('74');
+  expect(wrapper.findAll('.hold-point-display').map(el=>el.text())).toEqual(['10','10']);
+  await wrapper.find('.ability-slider').setValue('16');expect(wrapper.find('.ability-slider').element.value).toBe('4');
+  await wrapper.find('[aria-label="補正を保存"]').trigger('click');await flushPromises();
+  expect(fetchMock.mock.calls[0][0]).toBe('/t/demo/api/update_abilities');expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({player_id:1,abilities:{plus_meet:4}});
+  expect(wrapper.find('.ability-slider').element.disabled).toBe(true);wrapper.unmount();
+});

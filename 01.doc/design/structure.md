@@ -48,25 +48,13 @@
 
 CSV 取り込みの BASE_DIR はリポジトリ直下を維持します。年度成績の再取り込みスクリプトは従来どおり実行時のカレントディレクトリにある鍵・CSV を参照します。運用コマンドはリポジトリ直下から実行してください。
 
-## JavaScript
+## Vue SPA への移行
 
-日程の編集元は `static/js/schedule/` です。ブラウザの配信入口は従来の `static/schedule_board.js` を維持します。
+フロントエンドは `client/src/` に集約しました。画面は `views/`、共通 UI は `components/`、API 保存・終了処理は `composables/`、共有画面データは `stores/`、日付計算は `scheduling/` に分割します。Vite の出力先は `static/spa/` です。
 
-| ファイル | 内容 |
-| --- | --- |
-| `bootstrap.js` | 共通定数・状態変数・初期化 |
-| `dates.js` | 日付、祝日、候補日、試合日 |
-| `state.js` | 回答・下書き・人数・表示状態の補助処理 |
-| `api.js` | 日程更新の JSON 通信 |
-| `render.js` | HTML・画面描画 |
-| `forms.js` | 入力・イベントハンドラー・住所検索 |
-| `main.js` | 初回読込の起動処理 |
+旧 `client/views/` の Nunjucks テンプレート、`static/app/` の描画ランタイム、`static/vendor/` の Nunjucks、日程の旧 JavaScript 部品・結合ファイル、旧イベント JavaScript、対応する Python ビルドスクリプトは廃止しました。既存の共通 CSS・画像と Python の業務処理は継続しています。
 
-部品は単体でブラウザへ読み込まず、`python scripts/build_schedule_js.py` で同じ関数スコープに結合します。関数の巻き上げと状態変数の初期化順を維持するため、モジュール読み込み方式への変更は行っていません。結合済みファイルも Git 管理し、通常起動にビルドを必須としません。
-
-## テンプレート
-
-旧 `templates/parts/` の数字ファイル名を内容に応じた名称へ変更しました。例: `pc_profile_and_abilities.html`、`mobile_profile_and_navigation.html`、`pitcher_table.html`、`monthly_chart.html`。既存の部品境界と include 順は維持します。タグ・CSS・JavaScript の途中で分かれる既存部品もあるため、ファイル単独での描画は想定しません。API＋JS 移行後は `client/views/parts/` の `.njk` ファイルとしてブラウザが利用します。
+画面遷移は Vue Router、共有状態は Pinia、操作は Vue のイベントとフォームに置き換えます。詳細は [SPA と API の設計](api-client.md) を参照してください。
 
 ## ファイル分割時の検証
 

@@ -136,7 +136,7 @@ class RefactorCompatibilityTests(unittest.TestCase):
             "/t/demo/players", auth=("demo-login", "test-only-password")
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("/static/app/app.js", response.get_data(as_text=True))
+        self.assertIn("/static/spa/assets/", response.get_data(as_text=True))
         self.assertNotIn("選手A", response.get_data(as_text=True))
         self.assertIn("team_login=", response.headers["Set-Cookie"])
         response.close()
@@ -199,10 +199,12 @@ class RefactorCompatibilityTests(unittest.TestCase):
             "player_id": 1, "abilities": {"plus_meet": 17},
         }).status_code, 400)
 
-    def test_template_compilation(self):
-        sources = json.loads((ROOT / "static/app/views.json").read_text())
-        self.assertEqual(sum("/" not in name for name in sources), 18)
-        self.assertTrue(all(name.endswith(".njk") for name in sources))
+    def test_spa_build(self):
+        shell = (ROOT / "static/spa/index.html").read_text()
+        self.assertIn('id="app"', shell)
+        self.assertIn('/static/spa/assets/', shell)
+        self.assertTrue(list((ROOT / "static/spa/assets").glob("*.js")))
+        self.assertNotIn("nunjucks", shell.lower())
 
     def test_public_screen_data_and_private_data(self):
         for name in ("schedule", "events"):

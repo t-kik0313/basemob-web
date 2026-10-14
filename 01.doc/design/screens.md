@@ -6,7 +6,7 @@
 
 すべての画面パスには `/t/{slug}` が付きます。例: `/t/demo/players`。日程・イベント以外はチームログインが必要です。ログイン画面は HTML として持たず、ブラウザの HTTP Basic 認証ダイアログを使用します。
 
-`/` は選手一覧へ302リダイレクトします。共通メニューは各テンプレートに記述され、すべての画面で同一のレイアウト・項目ではありません。選手詳細は PC・モバイル向けの部品を含みます。全18画面は共通の静的 HTML を取得してから画面データ API を呼び、Nunjucks と JavaScript で描画します。日程・イベントはその後さらに既存 JSON API を使って表示状態を更新します。画面定義は `client/views/` に配置しています。
+`/` は選手一覧へ302リダイレクトします。共通メニューは Vue の AppNav が全18画面で表示し、画面遷移中・エラー時にも残します。全画面は選手詳細の白・水色・青枠・黄色アクセントを共通の画面テイストとします。全18画面は初回に共通の静的 HTML を取得し、画面データ API の JSON を Vue コンポーネントで描画します。その後の内部画面遷移は Vue Router が管理します。日程・イベントは既存 JSON API を使用し、Vue の状態とフォームで表示・更新します。表の Vue ファイルは `client/src/views/` 配下です。画面定義は `client/src/views/`、共通部品は `client/src/components/` に配置しています。
 
 ## 画面一覧
 
@@ -14,24 +14,24 @@
 
 | ID | 画面 / URL（GET） | 権限 | 主な表示・操作 | 実装 |
 | --- | --- | --- | --- | --- |
-| S-01 | 選手一覧 `/players` | 会員 | 名前・背番号・画像・主ポジション。詳細へのカードリンク、共通メニュー | `index_players.py` / `players.njk` |
-| S-02 | 選手登録 `/register_player` | 会員 | 名前・背番号・ポジション・投打・画像の入力 | `players.py` / `register.njk` |
-| S-03 | 選手編集 `/edit_player/{player_id}` | 会員 | 名前・背番号・主副ポジション・投打・生年月日・画像の編集 | `players.py` / `edit_player.njk` |
-| S-04 | 選手詳細 `/player_detail_R1/{player_id}` | 会員 | 選手属性、能力値・補正・特殊能力、成績、打球方向、月別打率、直近の調子 | `player_detail.py` / `player_detail_R1.njk` |
-| S-05 | 当年個人成績 `/current_year_stats/{player_id}` | 会員 | 試合・打席結果を表示 | `current_year.py` / `current_year_stats.njk` |
-| S-06 | 過去成績 `/player_history/{player_id}` | 会員 | 年度別成績・合計、年・試合区分の絞込 | `history.py` / `player_history.njk` |
-| S-07 | 従来打席入力 `/input_form_R1/{player_id}` | 会員 | 試合属性、各打席、試合単位の盗塁・得点等を入力 | `records.py` / `input_form_R1.njk` |
-| S-08 | 試合一覧 `/games` | 会員 | 試合カード、日付・対戦相手・得点、画像、動画、年の絞込 | `games.py` / `games.njk` |
-| S-09 | 試合詳細 `/game/{game_id}` | 会員 | スコアボード・打者・投手成績、画像・動画登録 | `game_detail.py` / `game_detail.njk` |
-| S-10 | チーム成績 `/teamstats` | 会員 | 年別試合数・勝敗・勝率・得失点・打率・防御率など、年・区分の絞込 | `teamstats.py` / `teamstats.njk` |
-| S-11 | 個人成績一覧 `/annual_stats_detail` | 会員 | 打者別集計、規定打席、チーム合計、選手詳細リンク | `annual.py` / `annual_stats_detail.njk` |
-| S-12 | 投手成績 `/pitchers` | 会員 | 登板、投球回、被安打・四死球・奪三振・自責点、WHIP・ERA・K/BB | `pitchers.py` / `pitchers.njk` |
-| S-13 | パワプロ風一覧 `/pawapuro` | 会員 | 選手能力値・ランク・特殊能力の一覧 | `abilities.py` / `pawapuro.njk` |
-| S-14 | 記録会まとめ `/record_summary` | 会員 | 選手名と投・打・走等の測定記録 | `meeting.py` / `record_summary.njk` |
-| S-15 | 日程調整 `/schedule` | 公開 | 日程ボード、回答、試合カード、回答者設定、打順・守備等 | `schedule.py` / `schedule.njk` / `schedule_board.js` |
-| S-16 | イベント `/events` | 公開 | 候補日・出欠・人数、作成・編集・確定・削除、回答者設定 | `events.py` / `events.njk` / `events.js` |
-| S-17 | 規定打席 `/admin/regulation` | 会員 | 1試合当たりの規定打席係数、保存完了・入力エラー | `regulation.py` / `regulation.njk` |
-| S-18 | 定性特殊能力 `/admin/qualitative_abilities` | 会員 | 種類追加、能力ごとの選手チェック、保存 | `qualitative_abilities.py` / `qualitative_abilities.njk` |
+| S-01 | 選手一覧 `/players` | 会員 | 名前・背番号・画像・主ポジション。詳細へのカードリンク、共通メニュー | `index_players.py` / `PlayersView.vue` |
+| S-02 | 選手登録 `/register_player` | 会員 | 名前・背番号・ポジション・投打・画像の入力 | `players.py` / `PlayerFormView.vue` |
+| S-03 | 選手編集 `/edit_player/{player_id}` | 会員 | 名前・背番号・主副ポジション・投打・生年月日・画像の編集 | `players.py` / `PlayerFormView.vue` |
+| S-04 | 選手詳細 `/player_detail_R1/{player_id}` | 会員 | 選手属性、能力値・補正・特殊能力、成績、打球方向、月別打率、直近の調子 | `player_detail.py` / `PlayerDetailView.vue` |
+| S-05 | 当年個人成績 `/current_year_stats/{player_id}` | 会員 | 試合・打席結果を表示 | `current_year.py` / `StatsView.vue` |
+| S-06 | 過去成績 `/player_history/{player_id}` | 会員 | 年度別成績・合計、年・試合区分の絞込 | `history.py` / `StatsView.vue` |
+| S-07 | 従来打席入力 `/input_form_R1/{player_id}` | 会員 | 試合属性、各打席、試合単位の盗塁・得点等を入力 | `records.py` / `RecordFormView.vue` |
+| S-08 | 試合一覧 `/games` | 会員 | 試合カード、日付・対戦相手・得点、画像、動画、年の絞込 | `games.py` / `GamesView.vue` |
+| S-09 | 試合詳細 `/game/{game_id}` | 会員 | スコアボード・打者・投手成績、画像・動画登録 | `game_detail.py` / `GameDetailView.vue` |
+| S-10 | チーム成績 `/teamstats` | 会員 | 年別試合数・勝敗・勝率・得失点・打率・防御率など、年・区分の絞込 | `teamstats.py` / `StatsView.vue` |
+| S-11 | 個人成績一覧 `/annual_stats_detail` | 会員 | 打者別集計、規定打席、チーム合計、選手詳細リンク | `annual.py` / `StatsView.vue` |
+| S-12 | 投手成績 `/pitchers` | 会員 | 登板、投球回、被安打・四死球・奪三振・自責点、WHIP・ERA・K/BB | `pitchers.py` / `StatsView.vue` |
+| S-13 | パワプロ風一覧 `/pawapuro` | 会員 | 選手能力値・ランク・特殊能力の一覧 | `abilities.py` / `AbilitiesView.vue` |
+| S-14 | 記録会まとめ `/record_summary` | 会員 | 選手名と投・打・走等の測定記録 | `meeting.py` / `StatsView.vue` |
+| S-15 | 日程調整 `/schedule` | 公開 | 日程ボード、回答、試合カード、回答者設定、打順・守備等 | `schedule.py` / `ScheduleView.vue` |
+| S-16 | イベント `/events` | 公開 | 候補日・出欠・人数、作成・編集・確定・削除、回答者設定 | `events.py` / `EventsView.vue` |
+| S-17 | 規定打席 `/admin/regulation` | 会員 | 1試合当たりの規定打席係数、保存完了・入力エラー | `regulation.py` / `SettingsView.vue` |
+| S-18 | 定性特殊能力 `/admin/qualitative_abilities` | 会員 | 種類追加、能力ごとの選手チェック、保存 | `qualitative_abilities.py` / `SettingsView.vue` |
 | S-19 | CSV 経路 `/csv_data` | 会員 | 現実装は選手一覧へ302。CSV テンプレートを表示しない | `csv_data.py` |
 | EXT-01 | 成績入力（別アプリ） | 外部仕様 | `https://basemob-207a2.web.app/app.html?team={team_id}` を別タブで開く | `teams/urls.py` の `score_entry_url` |
 
@@ -79,7 +79,7 @@
 | --- | --- | --- |
 | スコアボード画像保存 | `scoreboard_image` ファイル | 保存して詳細へ302。不正画像・未選択は変更せず302。試合なしは404 |
 | 動画リンク保存 | `youtube_url` | HTTP(S) URL、500文字以下を保存。無効値は変更せず同じ画面へ移動。空欄による削除不可 |
-| スコア編集 | テンプレートに編集フォームあり | `/update_game_score/{id}` が未登録のため、更新処理は未実装 |
+| イニングスコア | 1～9回と合計を表示 | `/update_game_score/{id}` が未登録のため、SPA は表示のみ対応 |
 
 YouTube の視聴リンクと ID 抽出を持ちますが、保存時に YouTube ドメインへ限定する検証はありません。
 
@@ -136,7 +136,7 @@ flowchart TB
     PUB --> EV
 ```
 
-各画面の「トップへ戻る」は選手一覧を指します。公開画面から会員画面に進むと、認証未成立の場合は401とブラウザ認証ダイアログになります。フィルター変更は同一画面の GET で行います。S-06 は `year`・`game_type`、S-08 は `year`、S-10 は `year`・`game_type` を使用します。
+各画面の「トップへ戻る」は選手一覧を指します。公開画面から会員画面に進むと、認証未成立の場合は401とブラウザ認証ダイアログになります。フィルター変更は Vue Router のクエリ更新と画面 API の GET で行います。S-06 は `year`・`game_type`、S-08 は `year`、S-10 は `year`・`game_type` を使用します。
 
 ## 表示・エラーの制約
 

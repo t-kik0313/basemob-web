@@ -1,51 +1,49 @@
-# API＋JavaScript の画面構成
+# Vue SPA と API の設計
 
-[設計書トップ](README.md) / [画面定義](screens.md) / [既存 API・業務フォーム](api.md)
+[設計書トップ](README.md)
 
-全18画面を、JSON の画面データ API とブラウザ描画へ移行しています。画面 URL、endpoint 名、認証、成績計算、Firestore の読み書き先は継続します。サーバーから完成した画面 HTML を取得する方式は終了し、共通の静的 HTML と JavaScript を配信します。
+Vue 3・Vue Router 4・Pinia 3・Vite 7 を使用します。Python / Flask は認証、JSON API、Firestore、静的配信を担当します。ブラウザ内の画面生成・状態・操作は Vue が担当し、Nunjucks と描画後のスクリプト再実行は廃止しました。
 
-## 処理の流れ
+## 画面起動・遷移
 
 ```mermaid
 sequenceDiagram
-    participant B as ブラウザ
+    participant B as ブラウザ / Vue SPA
+    participant R as Vue Router / Pinia
     participant F as Flask
-    participant D as Firestore
     B->>F: GET /t/{slug}/players
-    F->>F: チーム認証
-    F-->>B: 共通の静的 HTML・JavaScript
-    B->>F: GET /static/app/views.json
-    F-->>B: 静的な画面定義
-    B->>F: GET /t/{slug}/api/screens/players
-    F->>D: 名簿取得
-    D-->>F: 選手データ
-    F-->>B: JSON（view・data・meta）
-    B->>B: Nunjucks で画面描画・JS 初期化
-    B->>F: POST /t/{slug}/api/screens/register_player
-    F->>D: 既存処理で保存
-    F-->>B: JSON（redirect）
-    B->>F: GET /t/{slug}/players
+    F-->>B: static/spa/index.html と Vite の JS・CSS
+    B->>R: URL を解決
+    R->>F: GET /t/{slug}/api/screens/players
+    F-->>R: JSON data・meta
+    R-->>B: Vue コンポーネントを描画
+    B->>R: 内部リンクを選択 / 戻る・進む
+    R->>F: 次画面の JSON API
+    F-->>R: JSON
+    R-->>B: 全体の再読み込みなしで画面を切替
 ```
 
-画面間の移動は既存 URL への通常のページ遷移です。遷移先で静的シェル・API 読込・クライアント描画を行います。SPA のクライアントルーターは導入していません。
+既存18画面の URL を Vue Router と Flask の両方で定義します。初回アクセスと再読み込みは Flask の既存 GET ルートが SPA シェルを返します。遷移時は RouterLink と router.push を使用し、年度などのクエリを画面 API に引き継ぎます。外部スコア入力と動画は通常の外部リンクです。
 
-## ファイル構成
+## クライアント構成
 
-| 配置 | 内容 |
+| 配置 | 役割 |
 | --- | --- |
-| `webapp/presentation/pages.py` | 画面・更新 API の登録、JSON 化、保存後のリダイレクト変換、例外応答 |
-| `webapp/routes/` | 既存の取得・集計・保存処理。画面データを `screen_response` に渡す |
-| `static/app/shell.html` | 全画面共通の静的 HTML。読込中・JavaScript 無効時の案内 |
-| `static/app/app.js` | 画面起動、HTML の DOM への反映、画面 JS の初期化、フォーム送信・移動・エラー表示 |
-| `static/app/api.js` | チーム URL、JSON 通信、フォームから更新 API への経路解決 |
-| `static/app/renderer.js` | Nunjucks 環境、URL 生成、数値書式、名前空間操作、JSON エスケープ |
-| `client/views/*.njk` | ブラウザ側の画面テンプレート |
-| `client/views/parts/` | ブラウザ側の画面部品 |
-| `static/app/views.json` | テンプレートの配信用バンドル。利用者データは含まない |
-| `scripts/build_client_views.py` | `.njk` を配信用 JSON にまとめる |
-| `static/vendor/` | 固定バージョンの Nunjucks 3.2.4 とライセンス |
+| `client/src/App.vue` | 共通ナビ・読込・エラー・画面描画 |
+| `client/src/router.js` | 全18画面・履歴・URL・タイトル |
+| `client/src/stores/screen.js` | Pinia の画面データ。前の通信を中断し、遅延応答の上書きを防止 |
+| `client/src/api.js` | JSON 通信、チーム接頭辞、API URL |
+| `client/src/composables/useSave.js` | FormData / JSON 保存、保存中の二重送信防止、保存後の遷移 |
+| `client/src/composables/usePoll.js` | 日程・イベントの読込・保存・画面終了時の通信中断 |
+| `client/src/views/` | 選手・成績・試合・設定・日程・イベントの Vue 画面 |
+| `client/src/components/` | 表・画像・出欠フォーム・メンバー編集・住所検索などの共通部品 |
+| `client/src/stats.js` | 従来クライアント側で行っていた状況別打率などの表示集計 |
+| `client/src/scheduling/dates.js` | 従来の日付・祝日・候補日計算 |
+| `client/src/styles.css` | SPA の共通レイアウト・レスポンシブ表示 |
+| `static/style.css` と参照 CSS | 既存の共通スタイル |
+| `static/spa/` | Vite が生成し、Flask が配信する成果物 |
 
-従来の `templates/` は `client/views/` へ移し、Flask のサーバーテンプレートは使用しません。既存 CSS・日程・イベント JS は引き続き `static/` から配信します。
+画面データの `view` とルート一覧は既存 API の互換性を維持するため残しています。`view: "players.njk"` は旧識別子で、テンプレートファイルの読込・描画には使用しません。画面コンポーネントは Vue Router が選択します。
 
 ## 画面データ API
 
@@ -115,31 +113,33 @@ sequenceDiagram
 | スコアボード画像保存 | `/api/actions/game/{game_id}/scoreboard_image` |
 | 動画リンク保存 | `/api/actions/game/{game_id}/youtube` |
 
-保存後の内部302は `200 {"redirect":"/t/demo/players"}` のような JSON に変換し、ブラウザが移動します。フォーム検証で同じ画面を再表示する場合は `view/data/meta` にエラー・入力値を含めて返し、クライアントで再描画します。
+保存後の内部302は `200 {"redirect":"/t/demo/players"}` のような JSON に変換し、Vue Router が移動します。フォーム検証で同じ画面を再表示する場合は `view/data/meta` にエラー・入力値を含めて返し、クライアントで再描画します。
 
 日程・イベント・能力補正の既存 JSON API は従来のパスとレスポンスを維持します。未実装の属性更新・スコア更新は今回も実装対象に含めず、保存経路がなければクライアントがエラーを表示します。
 
-## 認証・エラー・描画
+## 認証・エラー・状態
 
-- 画面データ API の公開 GET は日程・イベントのみ。それ以外と新しいフォーム更新 API はチームログインが必要です。
-- 認証フックの401は従来どおり WWW-Authenticate とテキストです。クライアントは JSON を読めない認証エラーも扱います。
-- 対象データなしは404 JSON、画面 API の未処理例外は500 JSON。画面シェル自体は200でも、後続のデータ API がエラーになる場合があります。
-- 読込・保存失敗は共通メッセージ、初回読込失敗時は再読み込みボタンを表示します。フォーム保存中は二重送信を抑止します。
-- 通常の値は autoescape を有効にして描画します。script 内の JSON は `<`、`>`、`&`、引用符等を Unicode エスケープします。
-- テンプレートはアプリ内の信頼された画面定義のみを使用し、利用者からテンプレートを受け付けません。
-- 既存の画面 JS は描画後に実行し、チャート等の DOM 準備完了処理を通知します。画像選択の自動保存は requestSubmit で API 送信につなぎます。
-
-Nunjucks の描画・Loader・Jinja 互換機能の仕様は [公式 API 文書](https://mozilla.github.io/nunjucks/api.html) を参照します。Jinja の名前空間代入・タプル・文字列スライスはクライアント側の等価な表現へ移しています。
+- 公開 GET は日程・イベントのみ。それ以外の画面 API とフォーム更新は既存のチーム認証が必要です。Basic 認証・署名 Cookie・サーバー側権限を維持します。
+- 401・404・500、ネットワーク障害は共通エラーを表示します。画面シェルが200でも、後続 API が失敗する場合があります。再試行と再ログインを用意します。
+- 通常のデータは Vue のテキスト補間で表示し、利用者入力を HTML として挿入しません。
+- 日程・イベントの回答、ゲスト、未定期日、メンバー編集、試合カードと打順、イベントの作成・編集・確定・削除は Vue の状態・フォームで管理します。
+- 画面終了時に AbortController で通信を中断し、画像プレビューの Object URL を解放します。住所検索は国土地理院の既存 API を使います。
+- DB とサーバー側の検証・計算は変更していません。旧 DB 読込と新 DB 書込の不整合、未実装の属性更新・スコア更新は既存の制約です。試合詳細のイニングスコアは表示に対応します。
 
 ## 開発・検証
 
-```bash
-python scripts/build_client_views.py
-python scripts/build_schedule_js.py
-python -m unittest discover -s tests -v
-node tests/test_client.cjs
-```
+`client/` で `npm ci`、`npm test`、`npm run build` を実行します。開発は Flask を5000番、`npm run dev` の Vite を5173番で起動し、`http://127.0.0.1:5173/t/{slug}/players` を開きます。API と静的資産は Vite のプロキシで同一オリジンとして扱います。
 
-ビルド済みの views.json と schedule_board.js を同梱するため、通常起動は従来どおり `python app.py` です。実行時に Node.js や npm は不要です。クライアント画面定義を変えた場合は JSON を再生成してください。
+本番の Python 起動はコミット済み `static/spa/` を使用します。Node.js はフロントエンドの開発・ビルド・テストに使用します。詳細なコマンドは [README](../../README.md) を参照してください。
 
-検証では、模擬 DB による19件の Python テスト、全クライアントテンプレートのコンパイル・エスケープ・数値表示・空状態の JS テスト、全18画面の移行前後の表示比較を行っています。Chrome でも全18画面の描画と選手登録から一覧への遷移を確認しました。実 Firestore への書き込みは行っていません。
+## 選手詳細の既存デザイン
+
+`PlayerDetailView.vue` は旧 `player_detail_R1` の PC（1200px 固定・769px以上）とスマートフォン（768px以下）のレイアウトを再現します。ホームと同じ上部タブをこの画面にも表示し、旧画面の戻るリンクと画面内メニューも継続します。
+
+`components/player-detail/legacy.css` は旧画面の CSS を `.player-detail-page` 内に限定したものです。能力カード、守備位置による名前帯、色付きランク、特殊能力の空き枠、弾道・調子・球場画像を継続します。補正は編集ボタンでスライダーを有効化し、PC・モバイル間で値を同期します。旧画面の段階別ポイント単価と上限判定、元能力値への加算を再現します。月別打率は Chart.js を npm 依存として同梱し、画面終了時にグラフを破棄します。サーバーの API と計算は変更しません。
+
+## 全画面の共通デザインと上部タブ
+
+`client/src/styles.css` に選手詳細を基準とする共通色を定義します。背景は `#f4f7f9`、カードは白、水色の表示領域は `#D2F0FB`、枠線は `#cce0ff`、ナビ・操作は `#1a3c8d`、見出しアクセントは `#ffb800` です。全18画面の一覧・表・フォーム・日程・イベントで同じ配色と枠線を使用します。
+
+`AppNav` のホーム上部タブは全画面に表示します。画面データとは別にナビゲーション情報を保持し、画面遷移中・API エラー時にもタブを残します。チーム切替時はナビ情報をリセットします。公開画面では従来どおり日程・イベントの公開項目を表示し、会員向けの項目・認証・API 権限は維持します。768px以下ではタブを折り返し表示します。

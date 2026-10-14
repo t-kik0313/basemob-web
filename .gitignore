@@ -18,3 +18,8 @@ backups/
 
 # macOS
 .DS_Store
+
+# Vue / Vite development dependencies
+node_modules/
+client/.vite/
+*.log

@@ -1,6 +1,6 @@
 # BaseMob Web
 
-野球チームの選手、試合結果、個人成績、能力値、日程・イベントの出欠を管理する Web アプリです。Python / Flask が JSON API と静的ファイルを提供し、ブラウザの JavaScript が画面を描画します。Cloud Firestore にチームごとのデータを保存します。
+野球チームの選手、試合結果、個人成績、能力値、日程・イベントの出欠を管理する Web アプリです。Python / Flask が JSON API と静的ファイルを提供し、Vue 3 の SPA が画面を描画し、Vue Router が画面遷移、Pinia が画面データを管理します。Cloud Firestore にチームごとのデータを保存します。
 
 画面定義・画面遷移・データ定義・ビジネスルール・API 定義は [設計書](01.doc/design/README.md) を参照してください。
 
@@ -19,14 +19,14 @@
 
 ```mermaid
 flowchart TB
-    browser["ブラウザ<br/>JavaScript / Nunjucks で画面描画"]
+    browser["ブラウザ<br/>Vue 3 / Vue Router / Pinia SPA"]
     score["外部スコア入力アプリ<br/>Firebase Hosting"]
     geo["国土地理院 住所検索 API"]
 
     subgraph server["BaseMob Web / Python・Flask"]
         auth["チーム URL の解決・認証<br/>teams/ / auth.py"]
         routes["画面入口・JSON API<br/>webapp/routes/ + presentation/"]
-        view["静的 HTML・CSS・JS・画面定義<br/>static/app/ + static/vendor/"]
+        view["Vite ビルド済み SPA<br/>static/spa/ + static/style.css"]
         stats["成績集計・能力値計算<br/>webapp/stats/"]
         data["Firestore 接続・データ整形<br/>firebase.py / data.py"]
         files["ローカルファイル<br/>集計 JSON・画像・ログ"]
@@ -78,7 +78,7 @@ flowchart TB
 | 用途 | 技術 |
 | --- | --- |
 | Web サーバー・JSON API | Flask 3.0.3 |
-| フロントエンド・画面生成 | HTML / CSS / JavaScript / Nunjucks 3.2.4 |
+| フロントエンド・画面生成 | Vue 3 / Vue Router 4 / Pinia 3 / Vite 7 |
 | データベース接続 | Firebase Admin SDK / Cloud Firestore |
 | 成績集計 | pandas 2.2.3 / NumPy 2.1.2 |
 | 認証 | HTTP Basic 認証、itsdangerous による署名付き Cookie、Werkzeug のパスワードハッシュ |
@@ -189,14 +189,20 @@ basemob-web/
 │   ├── schedule_poll.py    # 旧 import パスの互換入口
 │   ├── create_team.py      # 旧チーム作成コマンドの互換入口
 │   └── migrate_team.py     # 旧移行コマンドの互換入口
-├── scripts/                # CSV 取り込み・チーム作成・移行・JS 結合
+├── scripts/                # CSV 取り込み・チーム作成・移行
 ├── tests/                  # 模擬 DB による互換性テスト
-├── client/views/           # ブラウザで描画する Nunjucks 画面・部品
+├── client/                 # Vue SPA のソース・依存管理
+│   ├── src/views/          # 18画面を担当する Vue コンポーネント
+│   ├── src/components/     # ナビゲーション・表・出欠などの共通部品
+│   ├── src/composables/    # 保存・日程 API 通信と終了時の後始末
+│   ├── src/stores/         # Pinia の画面データ・読込状態
+│   ├── src/scheduling/     # 日付・祝日・候補日計算
+│   ├── src/router.js       # Vue Router の URL 定義
+│   └── vite.config.js      # ビルド・開発用 API プロキシ・テスト
 ├── static/
-│   ├── app/                # 画面起動・API 通信・描画・画面定義 JSON
-│   ├── vendor/             # 同梱 Nunjucks とライセンス
-│   ├── js/schedule/        # 日程 JavaScript の編集元
-│   └── schedule_board.js   # ブラウザが読む結合済みファイル
+│   ├── spa/                # Flask が配信するビルド済み HTML・JS・CSS
+│   ├── style.css           # 既存の共通スタイル
+│   └── player_images/      # 選手画像などの静的資産
 ├── 01.doc/design/          # 設計書
 ├── players_data.json       # 集計キャッシュ
 ├── *.csv                   # 取り込み用・参照用のローカルデータ
@@ -249,39 +255,42 @@ git push origin main
 本番デプロイの設定は含まれていません。
 
 
-## 開発時の確認
+## SPA の開発・ビルド・確認
 
-日程 JavaScript は `static/js/schedule/` を編集し、次のコマンドで既存の配信ファイルを更新します。結合済みの `static/schedule_board.js` もリポジトリに含めるため、通常の起動にビルド操作は不要です。
-
-```bash
-python scripts/build_schedule_js.py
-```
-
-画面のテンプレートは `client/views/` を編集し、配信用 JSON を更新します。
+フロントエンドの開発には Node.js 22.22.2 以上の 22 系、または 24.15.0 以上の 24 系を使用してください。依存バージョンは `client/package-lock.json` で固定しています。
 
 ```bash
-python scripts/build_client_views.py
+cd client
+npm ci
+npm test
+npm run build
 ```
 
-仮想環境を有効化して、互換性テストを実行できます。テストでは模擬 DB を使い、実 Firestore や認証鍵へアクセスしません。
+`npm run build` は `static/spa/` に配信ファイルを出力します。ビルド結果も Git 管理するため、Python サーバーの通常起動に Node.js は不要です。フロントエンドを変更したときはソースとビルド結果を一緒に更新してください。
+
+開発時はリポジトリ直下で `python app.py` を起動し、別のターミナルで次を実行します。
+
+```bash
+cd client
+npm run dev
+```
+
+`http://127.0.0.1:5173/t/{slug}/players` を開きます。Vite はチーム付き API と既存静的資産を Flask の `127.0.0.1:5000` へ転送し、Vue の変更を即時反映します。認証は既存の Basic 認証・署名 Cookie を使用します。Flask の接続先を変更する場合は、Vite 起動時に `BASEMOB_API_TARGET` を指定します。
+
+Python の確認はリポジトリ直下、仮想環境を有効にした状態で実行します。テストは模擬 DB を使い、実 Firestore や認証鍵へアクセスしません。
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-JavaScript の描画テストは Node.js で実行します（起動には Node.js は不要です）。
+運用処理の実装は `scripts/` にあります。既存の `python migrate.py`、`python upload_csv.py`、`python -m webapp.create_team`、`python -m webapp.migrate_team` も引き続き使用できます。[構成変更の対応表](01.doc/design/structure.md) を参照してください。
 
-```bash
-node tests/test_client.cjs
-```
+## SPA と API の連携
 
-運用処理の実装は `scripts/` に移しています。既存の `python migrate.py`、`python upload_csv.py`、`python -m webapp.create_team`、`python -m webapp.migrate_team` も引き続き使用できます。分割内容は [構成変更の対応表](01.doc/design/structure.md) を参照してください。
+最初のアクセスでは Flask から共通の静的 HTML を取得します。その後は Vue Router が既存の `/t/{slug}/...` URL で画面を切り替え、`/t/{slug}/api/screens/{画面パス}` から取得した JSON を Vue コンポーネントへ渡します。内部リンク、保存後の移動、ブラウザの戻る・進むで HTML 全体を読み直しません。既存18画面の直接アクセス・再読み込みにも Flask が対応します。
 
+画面 URL、認証方式、サーバーの成績計算、DB 保存先、既存 API は維持しています。フォームは FormData、日程・イベント・能力補正は JSON を使います。日程とイベントの状態・イベント処理も Vue が管理し、画面終了時は通信を中断します。JavaScript が必要です。
 
-## API＋JavaScript の画面構成
+詳しくは [SPA と API の設計](01.doc/design/api-client.md) を参照してください。
 
-全18画面は共通の静的 HTML を取得した後、`/t/{slug}/api/screens/{画面パス}` から JSON を取得し、ブラウザ内で画面を組み立てます。サーバーは個々の画面の HTML を生成しません。フォーム保存と画像送信も API を使用します。
-
-画面 URL と認証方式、成績計算、DB の保存先は継続しています。画面遷移は既存 URL への通常の遷移を使い、移動先で再び API から描画します。JavaScript が必要です。
-
-詳しい経路・レスポンス・更新方法は [API＋JS の画面構成](01.doc/design/api-client.md) を参照してください。Nunjucks の固定バージョンとライセンスは `static/vendor/` に同梱しています。
+全画面のデザインは選手詳細の白・水色のカード、淡い青の枠線、黄色のアクセントで統一しています。ホーム上部のタブは全18画面に共通で表示し、読み込み中・API エラー時にも利用できます。

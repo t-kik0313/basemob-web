@@ -12,7 +12,7 @@
 | [データ・テーブル定義](data-model.md) | Firestore のコレクション、ネスト構造、旧データ、キャッシュ |
 | [ビジネスルール](business-rules.md) | 認証、選手管理、日程・イベント、成績集計、能力値の判定 |
 | [API＋JS の画面構成](api-client.md) | クライアント描画、画面データ API、フォーム API |
-| [構成変更の対応表](structure.md) | 分割先、互換入口、JavaScript の結合方法 |
+| [構成変更の対応表](structure.md) | 分割先、互換入口、Vue SPA の構成 |
 | [API・フォーム定義](api.md) | JSON API の action・入力・レスポンス、フォーム更新経路、エラー |
 
 ## システム構成
@@ -29,7 +29,7 @@ flowchart TB
     end
     V --> B
     R -->|JSON| B
-    B --> C[Nunjucks でブラウザ内描画]
+    B --> C[Vue 3 / Vue Router / Pinia]
     T --> N[(新 Firestore / teams)]
     R --> N
     D --> N
@@ -42,7 +42,7 @@ flowchart TB
 
 `app.py` が開発サーバーを起動し、`webapp/__init__.py` が Flask、認証フック、ルート、チーム URL 用 WSGI ミドルウェアを組み立てます。共通の静的 HTML と JSON API は同じ Flask アプリから配信します。画面ごとの HTML はブラウザ内で生成します。
 
-チーム別 URL は `/t/{slug}/...` です。`TeamPrefix` が接頭辞を外して既存ルートに渡し、`auth.py` が対象チームを解決します。クライアントテンプレートの `url_for` 相当の処理は `static/app/renderer.js` が API のルート情報を使ってチーム接頭辞を付与します。直接記述された `/games` などのリンクは、認証 Cookie を介したチーム URL へのリダイレクトに依存します。
+チーム別 URL は `/t/{slug}/...` です。`TeamPrefix` が接頭辞を外して既存ルートに渡し、`auth.py` が対象チームを解決します。クライアントは Vue Router の URL 定義と `teamPrefix` で `/t/{slug}` を付与します。内部リンクは RouterLink で遷移し、通常の画面移動で HTML 全体を読み直しません。
 
 新 DB はチーム別の名簿・試合・日程と設定を管理します。旧 DB は過去成績・能力計算のデータを供給します。これは完全にチーム分離された一つのデータモデルではなく、移行途中の構成です。
 
