@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from '../components/AppIcon.vue';
 import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { teamPrefix, staticImage } from '../api.js';
@@ -22,7 +23,7 @@ const positions = ['', '投', '捕', '一', '二', '三', '遊', '左', '中', '
 </script>
 <template>
   <section class="panel">
-    <h1>{{ editing ? '選手情報編集' : '選手登録' }}</h1>
+    <h1><AppIcon name="user-plus" />{{ editing ? '選手情報編集' : '選手登録' }}</h1>
     <FormStatus :error="error || data.error" :message="message" />
     <form @submit.prevent="submit">
       <div class="form-grid">
@@ -43,7 +44,7 @@ const positions = ['', '投', '捕', '一', '二', '三', '遊', '左', '中', '
       <label class="field">{{ editing ? '新しい画像' : '選手画像' }}<input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="chooseImage"></label>
       <img v-if="preview || (editing && fields.image_path)" :src="preview || staticImage(fields.image_path)" class="image-preview" alt="選手画像のプレビュー">
       <p class="note">画像は jpg・png・webp・gif、8MBまでです。</p>
-      <div class="actions"><button type="submit" :disabled="busy">{{ busy ? '保存中…' : '保存' }}</button><RouterLink :to="prefix + (editing ? '/player_detail_R1/' + route.params.playerId : '/players')" class="button secondary">キャンセル</RouterLink></div>
+      <div class="actions"><button type="submit" :disabled="busy"><AppIcon name="save" />{{ busy ? '保存中…' : '保存' }}</button><RouterLink :to="prefix + (editing ? '/player_detail_R1/' + route.params.playerId : '/players')" class="button secondary"><AppIcon name="close" />キャンセル</RouterLink></div>
     </form>
   </section>
 </template>

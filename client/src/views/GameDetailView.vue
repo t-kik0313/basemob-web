@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from '../components/AppIcon.vue';
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { staticImage } from '../api.js';
@@ -14,16 +15,16 @@ function submit(event, action) { save('/api/actions/game/' + encodeURIComponent(
 function upload(event) { if (event.target.files.length) event.target.form.requestSubmit(); }
 </script>
 <template>
-  <section class="panel"><h1>{{ data.game.date }}　vs {{ data.game.opponent }}</h1>
+  <section class="panel"><h1><AppIcon name="ball" />{{ data.game.date }}　vs {{ data.game.opponent }}</h1>
     <h2>{{ data.game.scoreMy }} − {{ data.game.scoreOpp }}</h2><p>{{ data.game.gameType }}　{{ data.game.stadium }}</p>
     <div class="table-scroll"><table><thead><tr><th>チーム</th><th v-for="inning in 9" :key="inning">{{ inning }}</th><th>計</th></tr></thead><tbody><tr><th>{{ data.team_name }}</th><td v-for="inning in 9" :key="inning">{{ data.game.my_scores?.[inning-1] ?? '' }}</td><td>{{ data.game.scoreMy }}</td></tr><tr><th>{{ data.game.opponent }}</th><td v-for="inning in 9" :key="inning">{{ data.game.opp_scores?.[inning-1] ?? '' }}</td><td>{{ data.game.scoreOpp }}</td></tr></tbody></table></div>
     <FormStatus :error="error" :message="message" />
     <img v-if="data.game.scoreboard_image" :src="staticImage(data.game.scoreboard_image)" alt="スコアボード" class="media">
-    <form @submit.prevent="submit($event,'scoreboard_image')"><label class="field">スコアボード画像<input name="scoreboard_image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" :disabled="busy" @change="upload"></label><button type="submit" :disabled="busy">画像を保存</button></form>
-    <form class="filters" @submit.prevent="submit($event,'youtube')"><label>YouTube URL <input name="youtube_url" :value="data.game.youtube_url" type="url" placeholder="https://..."></label><button type="submit" :disabled="busy">保存</button></form>
+    <form @submit.prevent="submit($event,'scoreboard_image')"><label class="field">スコアボード画像<input name="scoreboard_image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" :disabled="busy" @change="upload"></label><button type="submit" :disabled="busy"><AppIcon name="image" />画像を保存</button></form>
+    <form class="filters" @submit.prevent="submit($event,'youtube')"><label>YouTube URL <input name="youtube_url" :value="data.game.youtube_url" type="url" placeholder="https://..."></label><button type="submit" :disabled="busy"><AppIcon name="save" />保存</button></form>
     <a v-if="data.game.youtube_url" :href="data.game.youtube_url" target="_blank" rel="noopener noreferrer">YouTube で見る ↗</a>
     <iframe v-if="data.game.youtube_id" :src="'https://www.youtube.com/embed/' + data.game.youtube_id" class="media" title="試合動画" loading="lazy" allowfullscreen />
-    <div class="actions"><button :class="{selected:tab==='batters'}" @click="tab='batters'">打者成績</button><button :class="{selected:tab==='pitchers'}" @click="tab='pitchers'">投手成績</button></div>
+    <div class="actions"><button :class="{selected:tab==='batters'}" @click="tab='batters'"><AppIcon name="chart" />打者成績</button><button :class="{selected:tab==='pitchers'}" @click="tab='pitchers'"><AppIcon name="ball" />投手成績</button></div>
     <DataTable v-if="tab==='batters'" :rows="data.batters" :columns="columns" empty="打者データがありません。" />
     <DataTable v-else :rows="data.pitchers" :columns="pitcherColumns" empty="投手データがありません。" />
   </section>

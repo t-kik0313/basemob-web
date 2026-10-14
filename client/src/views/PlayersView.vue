@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from '../components/AppIcon.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { teamPrefix } from '../api.js';
@@ -9,7 +10,7 @@ const prefix = computed(() => teamPrefix(route));
 </script>
 <template>
   <section class="panel">
-    <h1>選手一覧</h1>
+    <h1><AppIcon name="users" />選手一覧</h1>
     <div class="players-grid">
       <RouterLink v-for="player in data.players" :key="player.player_id" :to="prefix + '/player_detail_R1/' + player.player_id" class="player-card">
         <PlayerImage :path="player.image_path" :name="player.name" />

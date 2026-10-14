@@ -1,4 +1,6 @@
 <script setup>
+import { iconForPath } from '../components/icons.js';
+import AppIcon from '../components/AppIcon.vue';
 import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { teamPrefix, staticImage } from '../api.js';
@@ -51,7 +53,7 @@ async function saveAbilities() {const result=await save('/api/update_abilities',
           </div>
         </div></div>
         <AbilitySliders :age="number(player.age ?? 25)" :remaining="remaining" :corrections="corrections" :editing="editing" :busy="busy" @edit="editing=true" @save="saveAbilities" @change="changeCorrection" />
-        <div class="nav-button-container"><div v-for="[kind,label,links] in groups" :key="label" class="nav-group" :class="kind"><span class="nav-group-label">{{ label }}</span><div class="nav-group-links"><RouterLink v-for="[path,text] in links" :key="path" :to="prefix+'/'+path" class="pc-nav-link">{{ text }}</RouterLink></div></div><RouterLink :to="prefix+'/edit_player/'+player.player_id" class="pc-edit-btn">編集</RouterLink></div>
+        <div class="nav-button-container"><div v-for="[kind,label,links] in groups" :key="label" class="nav-group" :class="kind"><span class="nav-group-label">{{ label }}</span><div class="nav-group-links"><RouterLink v-for="[path,text] in links" :key="path" :to="prefix+'/'+path" class="pc-nav-link"><AppIcon :name="iconForPath(path)" />{{ text }}</RouterLink></div></div><RouterLink :to="prefix+'/edit_player/'+player.player_id" class="pc-edit-btn"><AppIcon name="edit" />編集</RouterLink></div>
         <div class="pc-field-section"><FieldRates :stats="situations"/><FieldRates :stats="situations" cases /></div>
         <RecentForm :data="data" />
       </div>
@@ -68,7 +70,7 @@ async function saveAbilities() {const result=await save('/api/update_abilities',
       <div style="margin-top:15px"><div class="mob-spec-grid" style="margin-bottom:10px"><div v-for="[key,label] in specialRanks" :key="label" class="mob-spec-item" :style="key?{}:{background:'#f9fafb'}"><template v-if="key"><span class="s-label" :class="{'spec-label-keep':key==='injury'}">{{ label }}</span><span class="s-rank" :class="'rank-'+(player[key] || 'D')">{{ player[key] || 'D' }}</span></template></div></div>
         <div class="mob-active-skill-grid"><div v-for="([label,type],index) in skills" :key="index" class="mob-active-skill" :class="'skill-'+type">{{ label }}</div><div v-for="index in Math.max(0,12-skills.length)" :key="'empty'+index" class="mob-active-skill skill-empty" /></div>
       </div>
-      <div class="mob-btn-wrap"><RouterLink v-for="[path,label] in mobileLinks" :key="path" :to="prefix+'/'+path" class="mob-nav-btn" :class="{edit:label==='編集'}">{{ label }}</RouterLink></div>
+      <div class="mob-btn-wrap"><RouterLink v-for="[path,label] in mobileLinks" :key="path" :to="prefix+'/'+path" class="mob-nav-btn" :class="{edit:label==='編集'}"><AppIcon :name="iconForPath(path)" />{{ label }}</RouterLink></div>
       <FieldRates mobile :stats="situations"/><FieldRates mobile cases :stats="situations"/><RecentForm mobile :data="data" />
     </div></div>
   </div>

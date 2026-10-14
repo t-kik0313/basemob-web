@@ -1,4 +1,6 @@
 <script setup>
+import { screenIcons } from '../components/icons.js';
+import AppIcon from '../components/AppIcon.vue';
 import { computed, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { teamPrefix } from '../api.js';
@@ -23,12 +25,12 @@ function filter() { router.push({ path: route.path, query: Object.fromEntries(Ob
 </script>
 <template>
   <section class="panel">
-    <h1>{{ data.player?.name }} {{ route.meta.title }}</h1>
-    <div v-if="data.player" class="actions"><RouterLink :to="prefix + '/player_detail_R1/' + data.player.player_id" class="button secondary">選手詳細へ戻る</RouterLink></div>
+    <h1><AppIcon :name="screenIcons[route.name]" />{{ data.player?.name }} {{ route.meta.title }}</h1>
+    <div v-if="data.player" class="actions"><RouterLink :to="prefix + '/player_detail_R1/' + data.player.player_id" class="button secondary"><AppIcon name="arrow-left" />選手詳細へ戻る</RouterLink></div>
     <form v-if="['history', 'teamstats'].includes(route.name)" class="filters" @submit.prevent="filter">
       <label>年度 <input v-model="filters.year" type="number" placeholder="すべて" name="year"></label>
       <label>区分 <select v-model="filters.game_type" name="game_type"><option value="">すべて</option><option value="official">公式戦</option><option value="practice">練習試合</option></select></label>
-      <button type="submit">絞り込む</button><RouterLink :to="route.path">クリア</RouterLink>
+      <button type="submit"><AppIcon name="filter" />絞り込む</button><RouterLink :to="route.path"><AppIcon name="refresh" />クリア</RouterLink>
     </form>
     <p v-if="route.name === 'annual'" class="note">規定打席 {{ data.regulation_pa }}。規定到達者、未到達者の順に表示します。</p>
     <section v-if="route.name === 'current'" class="panel">

@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from '../components/AppIcon.vue';
 import { reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSave } from '../composables/useSave.js';
@@ -12,7 +13,7 @@ const results = [['H','安打'],['1B','単打'],['2B','二塁打'],['3B','三塁
 function submit(event) { save('/api/actions/save_record/'+route.params.playerId,new FormData(event.currentTarget)); }
 </script>
 <template>
-  <section class="panel"><h1>成績入力 — {{ data.player.name }}</h1><FormStatus :error="error" :message="message" />
+  <section class="panel"><h1><AppIcon name="clipboard" />成績入力 — {{ data.player.name }}</h1><FormStatus :error="error" :message="message" />
     <form @submit.prevent="submit"><div class="form-grid">
       <label class="field">試合日<input v-model="game.game_date" name="game_date" type="date" required></label><label class="field">試合 ID<input v-model="game.game_id" name="game_id" required></label>
       <label class="field">球場形状<select v-model="game.stadium" name="stadium"><option v-for="n in 5" :key="n" :value="String(n)">{{ n }}</option></select></label>
@@ -27,6 +28,6 @@ function submit(event) { save('/api/actions/save_record/'+route.params.playerId,
       <label class="field">走者<select v-model="record.runner" name="runner[]"><option v-for="[key,label] in [['0','なし'],['1','1塁'],['2','2塁'],['3','3塁'],['1.2','1・2塁'],['1.3','1・3塁'],['2.3','2・3塁'],['F','満塁']]" :key="key" :value="key">{{ label }}</option></select></label>
       <label class="field">ストライク<select v-model="record.strikes" :name="'s'+(index+1)"><option v-for="n in [0,1,2]" :key="n" :value="String(n)">{{ n }}</option></select></label>
     </div><label><input v-model="record.vs_left" type="checkbox"> 対左</label><input name="vs_left[]" type="hidden" :value="record.vs_left?'1':'0'">　<label><input v-model="record.sayonara" type="checkbox"> サヨナラ</label><input name="sayonara[]" type="hidden" :value="record.sayonara?'1':'0'"></article>
-    <div class="actions"><button type="button" class="secondary" @click="records.push(blank())">＋ 打席を追加</button><button type="submit" :disabled="busy">成績を登録する</button></div></form>
+    <div class="actions"><button type="button" class="secondary" @click="records.push(blank())"><AppIcon name="plus" />打席を追加</button><button type="submit" :disabled="busy"><AppIcon name="save" />成績を登録する</button></div></form>
   </section>
 </template>

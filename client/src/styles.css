@@ -97,3 +97,12 @@ h3 { font-size: 1.05rem; }
 .spa:not(.player-detail-shell) button:hover:not(:disabled) { filter:brightness(.96); }
 .spa:not(.player-detail-shell) input:focus, .spa:not(.player-detail-shell) select:focus, .spa:not(.player-detail-shell) textarea:focus { border-color:#93c5fd; }
 @media(prefers-reduced-motion:reduce) { .site-header nav a, .site-header nav button, .spa .player-card { transition:none; } }
+
+/* Icons supplement visible labels and use the same symbols across screens. */
+.app-icon { display:inline-block; width:1.15em; height:1.15em; flex-shrink:0; vertical-align:-.18em; margin-right:.45em; }
+.site-header .brand .app-icon { color:#2563eb; width:1.3em; height:1.3em; }
+.site-header nav a, .site-header nav button { display:inline-flex; align-items:center; }
+.site-header .external-icon { width:.85em; height:.85em; margin:0 0 0 .4em; opacity:.7; }
+.spa:not(.player-detail-shell) h1 > .app-icon { color:#2563eb; background:#eff6ff; padding:7px; box-sizing:content-box; border-radius:10px; margin-right:12px; vertical-align:-.35em; }
+.player-detail-page .pc-nav-link .app-icon, .player-detail-page .pc-edit-btn .app-icon { width:1em;height:1em; }
+.player-detail-page .mob-nav-btn .app-icon { width:1em;height:1em; }

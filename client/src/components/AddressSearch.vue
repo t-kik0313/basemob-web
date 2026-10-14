@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from './AppIcon.vue';
 import { onBeforeUnmount, ref } from 'vue';
 const emit = defineEmits(['select']);
 const query = ref(''); const results = ref([]); const error = ref(''); const busy = ref(false);
@@ -15,7 +16,7 @@ async function search() {
 }
 </script>
 <template>
-  <div class="panel"><label>住所検索（国土地理院）<input v-model="query" placeholder="球場名・住所"></label><button type="button" :disabled="busy || !query.trim()" @click="search">検索</button>
+  <div class="panel"><label>住所検索（国土地理院）<input v-model="query" placeholder="球場名・住所"></label><button type="button" :disabled="busy || !query.trim()" @click="search"><AppIcon name="search" />検索</button>
     <p v-if="error" role="alert">{{ error }}</p><ul><li v-for="(item,index) in results" :key="index"><button type="button" @click="emit('select',item.properties.title); results = []">{{ item.properties.title }}</button></li></ul>
   </div>
 </template>
