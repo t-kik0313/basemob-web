@@ -2,6 +2,8 @@
 
 野球チームの選手、試合結果、個人成績、能力値、日程・イベントの出欠を管理する Web アプリです。Python / Flask で画面と API を提供し、Cloud Firestore にチームごとのデータを保存します。
 
+画面定義・画面遷移・データ定義・ビジネスルール・API 定義は [設計書](01.doc/design/README.md) を参照してください。
+
 ## 主な機能
 
 - 選手一覧、選手の登録・編集、選手画像のアップロード
@@ -156,7 +158,7 @@ python app.py
 | `/teamstats` / `/pitchers` / `/annual_stats_detail` | チーム・投手・年度成績 |
 | `/schedule` / `/events` | 日程調整・イベント |
 | `/admin/regulation` / `/admin/qualitative_abilities` | 規定打席・特殊能力の設定 |
-| `/csv_data` | ローカル CSV の確認 |
+| `/csv_data` | 現実装では選手一覧へリダイレクト |
 | `GET /api/schedule` / `POST /api/schedule/poll` | 日程取得・操作 |
 | `GET・POST /api/events` | イベント取得・操作 |
 | `POST /api/update_abilities` | 能力補正の更新 |
