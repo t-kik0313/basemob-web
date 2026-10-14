@@ -35,7 +35,7 @@
 | S-19 | CSV 経路 `/csv_data` | 会員 | 現実装は選手一覧へ302。CSV テンプレートを表示しない | `csv_data.py` |
 | EXT-01 | 成績入力（別アプリ） | 外部仕様 | `https://basemob-207a2.web.app/app.html?team={team_id}` を別タブで開く | `tenant.py` の `score_entry_url` |
 
-試合成績・能力の細かな表示値は [ビジネスルール](business-rules.md) を参照します。`templates/` に存在してもルート未登録の `add_player.html`、`record_detail.html` 等は独立した稼働画面として扱いません。
+試合成績・能力の細かな表示値は [ビジネスルール](business-rules.md) を参照します。ルート未登録の旧テンプレート（`add_player.html`、`record_detail.html` 等）は整理時に削除しました。
 
 ## 主要画面の項目定義
 
@@ -142,5 +142,5 @@ flowchart TB
 
 - 例外時に空一覧を返す画面と、500のテキストを返す画面が混在しています。統一されたエラー画面の登録はありません。
 - `/csv_data` は選手一覧へリダイレクトするため、README にある「CSV 確認」は現実装では直接表示されません。
-- S-13 の `/api/update_attr`、旧日程部品の `POST /api/schedule` は未登録です。古い部品の存在を API の実装済み根拠にしません。
+- S-13 の `/api/update_attr` は未登録です。旧日程部品は整理時に削除しました。
 - ログアウト専用ルートはありません。チームごとのユーザーアカウント画面もありません。

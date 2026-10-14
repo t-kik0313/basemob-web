@@ -266,15 +266,3 @@ erDiagram
 | `backups/ryunen-{timestamp}/before.pkl` | 専用移行処理前のチーム・選手・試合・予定の pickle バックアップ |
 
 キャッシュは元属性に `id`、`age`、`holding_points`、能力値（`meet_val,power_val,speed_val,arm_val,defense_val,catch_val`）、ランク・特殊能力・成績等を追加します。手動編集用の主データではありません。`update_json_from_csv` という名称ですが、現在の集計入力は主に Firestore です。
-
-## SQLite の補助テーブル
-
-`database.py` の `players` は現在の Flask の保存先ではありません。初期化はテーブルを DROP して作り直します。
-
-| 型 | 列 |
-| --- | --- |
-| TEXT NOT NULL | `name` |
-| TEXT | `image,main_position,throwing_hand` |
-| INTEGER | `number,meet,power,speed,arm,defense,catch,pa,h,double_h,triple_h,hr,bb,hbp,so,sf,sh,rbi,run,sb,cs,dp,e` |
-
-主キー・外部キー・ユニーク制約の宣言はありません。

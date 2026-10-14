@@ -70,7 +70,7 @@ flowchart TB
 
 現在は新旧 DB を併用しています。`webapp/data.py` の旧データ取得対象は旧 DB から読み込み、名簿・試合・日程などのチーム別データは新 DB を使用します。従来の打席記録の保存・更新・削除処理は新 DB のトップレベル `game_records` を操作するため、旧 DB からの読み込み先とは異なります。
 
-`schedule_data.csv` は拡張子が CSV ですが、予定の読み込み処理では JSON 配列として扱います。`baseball.db` と `database.py` は SQLite 用の補助ファイルで、現在の Flask アプリの主データストアは Firestore です。
+`schedule_data.csv` は拡張子が CSV ですが、予定の読み込み処理では JSON 配列として扱います。アプリの主データストアは Firestore です。
 
 ## 技術構成
 
@@ -81,13 +81,13 @@ flowchart TB
 | データベース接続 | Firebase Admin SDK / Cloud Firestore |
 | 成績集計 | pandas 2.2.3 / NumPy 2.1.2 |
 | 認証 | HTTP Basic 認証、itsdangerous による署名付き Cookie、Werkzeug のパスワードハッシュ |
-| CSV・表計算などの補助処理 | pandas / openpyxl / xlrd / Beautiful Soup / requests |
+| CSV・表計算などの補助処理 | pandas / openpyxl / xlrd |
 
 ## ローカルでの起動
 
 ### 1. Python 環境と依存パッケージ
 
-開発用には Python 3.12 を推奨します。同梱の `venv/` は Windows 用の構成なので、各環境で新しい仮想環境を作成してください。
+開発用には Python 3.12 を推奨します。各環境で新しい仮想環境を作成してください。
 
 macOS / Linux:
 
@@ -122,7 +122,7 @@ basemob-web/
 
 ファイル名に `notuse` が含まれていますが、旧 DB の鍵も現在の起動処理で使用します。どちらかの初期化に失敗すると、実装上は両方の DB クライアントが無効になります。認証鍵は別途用意し、Git にコミットしないでください。
 
-`.gitignore` の `firebase_key*.json` により、プロジェクト直下と `zip/` などのサブディレクトリ内にある同名の鍵ファイルを Git 管理から除外しています。鍵を別名で保存する場合は、その名前も除外対象に追加してください。すでに追跡されているファイルには `.gitignore` は適用されません。
+`.gitignore` の `firebase_key*.json` により、プロジェクト直下とサブディレクトリ内にある同名の鍵ファイルを Git 管理から除外しています。鍵を別名で保存する場合は、その名前も除外対象に追加してください。すでに追跡されているファイルには `.gitignore` は適用されません。
 
 ### 3. チーム情報の準備
 
@@ -200,7 +200,6 @@ basemob-web/
 - `python migrate.py` はルート直下の CSV を新 DB のトップレベルコレクションへ取り込みます。チーム別のサブコレクションへの移行ではありません。
 - `python upload_csv.py` は旧 DB の `annual_stats` を一度削除してから CSV データを再登録します。実行前に接続先とバックアップを確認してください。
 - `python -m webapp.migrate_team` は `RYUNEN` 専用です。名簿・試合件数などの固定条件を確認し、`backups/` に移行前のデータを保存します。汎用のチーム作成には `create_team` を使用してください。
-- `python database.py` は SQLite の `players` テーブルを削除して初期データを作ります。Firestore アプリの起動には不要です。
 
 ## トラブルシューティング
 
@@ -219,7 +218,7 @@ git push origin main
 
 `GH013` / `Push cannot contain secrets` と表示された場合は、GitHub Push Protection が送信対象のコミット内に認証鍵を検出しています。現在のファイルを削除したり `.gitignore` を追加したりするだけでは、過去のコミットにある鍵は除去されません。鍵が含まれるすべてのコミットから除外する必要があります。[GitHub の対応手順](https://docs.github.com/en/code-security/how-tos/secure-your-secrets/work-with-leak-prevention/push-protection-on-the-command-line)
 
-このリポジトリでは、初回コミットに含まれていた `zip/firebase_key.json` と `zip/firebase_key_notuse.json` を `main` の履歴から除外し、ローカルファイルを保持したうえで `.gitignore` を追加しました。履歴変更時の旧コミットはローカルのバックアップ参照 `refs/original/refs/heads/main` に残っているため、その参照には鍵が含まれます。`git push origin main` ではこのバックアップ参照は送信されません。旧履歴を含む `git push --mirror` やバックアップの共有は避けてください。
+このリポジトリでは、初回コミットに含まれていた `zip/firebase_key.json` と `zip/firebase_key_notuse.json` を `main` の履歴から除外し、ローカルファイルを保持したうえで `.gitignore` を追加しました。その後、旧コピーの `zip/` を整理し、鍵はアプリが参照するプロジェクト直下に移しました。履歴変更時の旧コミットはローカルのバックアップ参照 `refs/original/refs/heads/main` に残っているため、その参照には鍵が含まれます。`git push origin main` ではこのバックアップ参照は送信されません。旧履歴を含む `git push --mirror` やバックアップの共有は避けてください。
 
 実際の認証鍵を検出された場合は、保護の解除リンクで公開を許可せず、履歴から除外してください。漏えい対策として対象のサービスアカウント鍵を Google Cloud 側で失効・再発行し、ローカルの鍵ファイルも更新することを推奨します。
 

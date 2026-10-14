@@ -231,6 +231,6 @@ JSON API の入力は `Content-Type: application/json`。フォームは `applic
 | 国土地理院住所検索 | ブラウザから `https://msearch.gsi.go.jp/address-search/AddressSearch?q={検索語}` に GET。Flask のプロキシ API はなし |
 | `/api/update_attr` | 能力一覧部品から呼ぶが Flask に未登録 |
 | `/update_game_score/{game_id}` | 試合スコア編集フォームから呼ぶが Flask に未登録 |
-| POST `/api/schedule` | 古い日程部品に記載があるが GET のみ登録 |
+| POST `/api/schedule` | GET のみ登録。旧日程部品は整理時に削除 |
 
 チーム認証済みの場合、未登録パスは原則404、既存パスの非対応メソッドは405です。認証フックは先に動くため、未ログイン状態では401が先に返る場合があります。
