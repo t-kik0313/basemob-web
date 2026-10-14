@@ -18,7 +18,7 @@ def _log_error(message):
 
 
 def _cache_path():
-    from webapp.tenant import current_team_id
+    from webapp.teams.context import current_team_id
     team_id = current_team_id()
     if not team_id or team_id == 'RYUNEN':
         return JSON_PLAYERS

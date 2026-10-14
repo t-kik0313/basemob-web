@@ -45,10 +45,10 @@ def batting_count(pdf):
     hrs = len(pdf[pdf['calc_bases'] == 4]) if not pdf.empty else 0
     total_bases = int(pdf['calc_bases'].sum()) if not pdf.empty else 0
 
-    bb = len(pdf[pdf['result'].isin(['B', 'BB', 'HBP'])]) 
-    sf = len(pdf[pdf['result'] == 'SF']) 
-    sh = len(pdf[pdf['result'] == 'SH']) 
-    so = len(pdf[pdf['result'] == 'K']) 
+    bb = len(pdf[pdf['result'].isin(['B', 'BB', 'HBP'])])
+    sf = len(pdf[pdf['result'] == 'SF'])
+    sh = len(pdf[pdf['result'] == 'SH'])
+    so = len(pdf[pdf['result'] == 'K'])
 
     sb = int(pd.to_numeric(pdf.get('sb', 0), errors='coerce').fillna(0).sum()) if not pdf.empty else 0
     runs = int(pd.to_numeric(pdf.get('runs', 0), errors='coerce').fillna(0).sum()) if not pdf.empty else 0
@@ -58,7 +58,7 @@ def batting_count(pdf):
 
     avg = safe_div(hits, ab)
     slg = safe_div(total_bases, ab)
-    obp = safe_div(hits + bb, pa) 
+    obp = safe_div(hits + bb, pa)
     return {
         "pdf": pdf,
         "p_games_count": p_games_count,

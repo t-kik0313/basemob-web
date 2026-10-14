@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
-from webapp.tenant import games_ref
+from webapp.repositories.references import games_ref
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
@@ -35,7 +35,7 @@ def games():
                     }
 
                     actions_raw = p.get('actions', [])
-                    
+
                     # 🛡️ 安全装置1
                     if isinstance(actions_raw, dict):
                         actions = list(actions_raw.values())
@@ -50,14 +50,14 @@ def games():
                         # 🛡️ 安全装置2
                         if isinstance(pa, str):
                             pa = {'action': pa}
-                            
+
                         act = str(pa.get('action', ''))
-                        
+
                         try:
                             stats['RBI'] += int(pa.get('rbi', 0))
                         except (ValueError, TypeError):
                             pass
-                            
+
                         if pa.get('run'):
                             stats['RUNS'] += 1
 
@@ -99,7 +99,7 @@ def games():
                                 stats['RISP_AB'] += 1
 
                     batter_stats.append(stats)
-            
+
             # 計算した「打者成績表」を埋め込む
             g_data['batter_stats'] = batter_stats
             games_list.append(g_data)

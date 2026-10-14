@@ -2,7 +2,8 @@ from flask import g, redirect, request, Response
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from webapp.config import LOGIN_DAYS, SECRET_KEY
-from webapp.tenant import all_teams, password_matches, safe_realm, team_by_id, team_by_slug
+from webapp.teams.context import all_teams, password_matches, team_by_id, team_by_slug
+from webapp.teams.urls import safe_realm
 
 COOKIE_NAME = "team_login"
 COOKIE_MAX_AGE = LOGIN_DAYS * 24 * 60 * 60

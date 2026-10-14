@@ -15,8 +15,8 @@
 | ID | 画面 / URL（GET） | 権限 | 主な表示・操作 | 実装 |
 | --- | --- | --- | --- | --- |
 | S-01 | 選手一覧 `/players` | 会員 | 名前・背番号・画像・主ポジション。詳細へのカードリンク、共通メニュー | `index_players.py` / `players.html` |
-| S-02 | 選手登録 `/register_player` | 会員 | 名前・背番号・ポジション・投打・画像の入力 | `misc.py` / `register.html` |
-| S-03 | 選手編集 `/edit_player/{player_id}` | 会員 | 名前・背番号・主副ポジション・投打・生年月日・画像の編集 | `misc.py` / `edit_player.html` |
+| S-02 | 選手登録 `/register_player` | 会員 | 名前・背番号・ポジション・投打・画像の入力 | `players.py` / `register.html` |
+| S-03 | 選手編集 `/edit_player/{player_id}` | 会員 | 名前・背番号・主副ポジション・投打・生年月日・画像の編集 | `players.py` / `edit_player.html` |
 | S-04 | 選手詳細 `/player_detail_R1/{player_id}` | 会員 | 選手属性、能力値・補正・特殊能力、成績、打球方向、月別打率、直近の調子 | `player_detail.py` / `player_detail_R1.html` |
 | S-05 | 当年個人成績 `/current_year_stats/{player_id}` | 会員 | 試合・打席結果を表示 | `current_year.py` / `current_year_stats.html` |
 | S-06 | 過去成績 `/player_history/{player_id}` | 会員 | 年度別成績・合計、年・試合区分の絞込 | `history.py` / `player_history.html` |
@@ -26,14 +26,14 @@
 | S-10 | チーム成績 `/teamstats` | 会員 | 年別試合数・勝敗・勝率・得失点・打率・防御率など、年・区分の絞込 | `teamstats.py` / `teamstats.html` |
 | S-11 | 個人成績一覧 `/annual_stats_detail` | 会員 | 打者別集計、規定打席、チーム合計、選手詳細リンク | `annual.py` / `annual_stats_detail.html` |
 | S-12 | 投手成績 `/pitchers` | 会員 | 登板、投球回、被安打・四死球・奪三振・自責点、WHIP・ERA・K/BB | `pitchers.py` / `pitchers.html` |
-| S-13 | パワプロ風一覧 `/pawapuro` | 会員 | 選手能力値・ランク・特殊能力の一覧 | `misc.py` / `pawapuro.html` |
-| S-14 | 記録会まとめ `/record_summary` | 会員 | 選手名と投・打・走等の測定記録 | `misc.py` / `record_summary.html` |
+| S-13 | パワプロ風一覧 `/pawapuro` | 会員 | 選手能力値・ランク・特殊能力の一覧 | `abilities.py` / `pawapuro.html` |
+| S-14 | 記録会まとめ `/record_summary` | 会員 | 選手名と投・打・走等の測定記録 | `meeting.py` / `record_summary.html` |
 | S-15 | 日程調整 `/schedule` | 公開 | 日程ボード、回答、試合カード、回答者設定、打順・守備等 | `schedule.py` / `schedule.html` / `schedule_board.js` |
 | S-16 | イベント `/events` | 公開 | 候補日・出欠・人数、作成・編集・確定・削除、回答者設定 | `events.py` / `events.html` / `events.js` |
 | S-17 | 規定打席 `/admin/regulation` | 会員 | 1試合当たりの規定打席係数、保存完了・入力エラー | `regulation.py` / `regulation.html` |
 | S-18 | 定性特殊能力 `/admin/qualitative_abilities` | 会員 | 種類追加、能力ごとの選手チェック、保存 | `qualitative_abilities.py` / `qualitative_abilities.html` |
 | S-19 | CSV 経路 `/csv_data` | 会員 | 現実装は選手一覧へ302。CSV テンプレートを表示しない | `csv_data.py` |
-| EXT-01 | 成績入力（別アプリ） | 外部仕様 | `https://basemob-207a2.web.app/app.html?team={team_id}` を別タブで開く | `tenant.py` の `score_entry_url` |
+| EXT-01 | 成績入力（別アプリ） | 外部仕様 | `https://basemob-207a2.web.app/app.html?team={team_id}` を別タブで開く | `teams/urls.py` の `score_entry_url` |
 
 試合成績・能力の細かな表示値は [ビジネスルール](business-rules.md) を参照します。ルート未登録の旧テンプレート（`add_player.html`、`record_detail.html` 等）は整理時に削除しました。
 

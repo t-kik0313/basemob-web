@@ -4,11 +4,13 @@ from flask import render_template, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
-from webapp.tenant import games_ref, pa_per_game, roster_rows
+from webapp.repositories.references import games_ref
+from webapp.teams.context import pa_per_game
+from webapp.repositories.players import roster_rows
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
-from webapp.routes.annual_tables import build_annual_tables
-from webapp.routes.annual_tally import tally_games
+from webapp.stats.annual_tables import build_annual_tables
+from webapp.stats.annual_tally import tally_games
 
 
 @app.route('/annual_stats_detail')

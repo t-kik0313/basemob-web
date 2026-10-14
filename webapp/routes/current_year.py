@@ -2,11 +2,11 @@ from flask import render_template, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
-from webapp.tenant import load_player_shell
+from webapp.services.player_view import load_player_shell
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
-from webapp.routes.current_year_game import absorb_game
-from webapp.routes.current_year_records import PLATE_RESULT_MAP, extend_plate_records, iter_numbered_games
+from webapp.stats.current_year_game import absorb_game
+from webapp.services.season_records import PLATE_RESULT_MAP, extend_plate_records, iter_numbered_games
 
 
 @app.route('/current_year_stats/<int:player_id>')

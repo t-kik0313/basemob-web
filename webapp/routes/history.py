@@ -4,7 +4,7 @@ from webapp import app
 from webapp.firebase import db, db_old
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
-from webapp.routes.history_current import append_current_season
+from webapp.services.player_history import append_current_season
 
 
 @app.route('/player_history/<int:player_id>')
@@ -19,7 +19,7 @@ def player_history(player_id):
     f_year = request.args.get('year', '')
     f_type = request.args.get('game_type', '')
     history_stats = []
-    
+
     # 1. 過去データの取得
     if not annual_df.empty and 'player_id' in annual_df.columns:
         past_data = annual_df[annual_df['player_id'] == player_id].to_dict(orient='records')
@@ -37,7 +37,7 @@ def player_history(player_id):
     total_stats = {k: 0 for k in ['games', 'plate_apperances', 'at_bats', 'hits', 'homeruns', 'runs_batted_in', 'scores', 'stolen_bases', 'doubles', 'triples', 'strike_outs', 'bb', 'hbp', 'sacrifice_bants', 'sacrifice_flies', 'double_plays', 'errors', 'risp_ab', 'risp_h']}
     for r in history_stats:
         for k in total_stats.keys(): total_stats[k] += int(float(r.get(k, 0)))
-            
+
     ts = total_stats
     ts['batting_average'] = ts['hits'] / ts['at_bats'] if ts['at_bats'] > 0 else 0.0
     den = ts['at_bats'] + ts['bb'] + ts['hbp'] + ts['sacrifice_flies']

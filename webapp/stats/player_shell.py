@@ -22,13 +22,13 @@ def player_shell(p_row):
     p_data['throw'] = str(p_row.get('throw', 'D')) if str(p_row.get('throw', '')).strip() != "" else 'D'
     p_data['catcher'] = str(p_row.get('catcher', 'D')) if str(p_row.get('catcher', '')).strip() != "" else 'D'
 
-    age = 25 
+    age = 25
     birth_str = str(p_data.get('birth_date', '')).strip()
     if birth_str:
         for fmt in ('%Y-%m-%d', '%Y/%m/%d'):
             try:
                 b_date = datetime.strptime(birth_str, fmt)
-                today = datetime.today() 
+                today = datetime.today()
                 age = today.year - b_date.year - ((today.month, today.day) < (b_date.month, b_date.day))
                 break
             except ValueError: continue

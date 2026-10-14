@@ -6,8 +6,8 @@
 
 | ID | 現行ルール | 根拠 |
 | --- | --- | --- |
-| B-A01 | `/t/{slug}` の slug またはチーム ID の小文字表現で対象チームを照合 | `tenant.py:team_by_slug` |
-| B-A02 | チームの `login_id` とパスワードハッシュを Basic 認証で検証 | `tenant.py:password_matches` |
+| B-A01 | `/t/{slug}` の slug またはチーム ID の小文字表現で対象チームを照合 | `teams/context.py:team_by_slug` |
+| B-A02 | チームの `login_id` とパスワードハッシュを Basic 認証で検証 | `teams/context.py:password_matches` |
 | B-A03 | 署名付き Cookie `team_login` の team ID が対象と一致すれば認証済み | `auth.py` |
 | B-A04 | Cookie 有効期間は30日。HttpOnly、SameSite=Lax、path=/。Secure 属性は未指定 | `auth.py:remember_login` |
 | B-A05 | チーム接頭辞なしの認証済みリクエストはチーム URL へ302。クエリは引き継ぐ | `auth.py:send_to_team` |
@@ -31,7 +31,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 | B-P08 | 選手画像未指定は `default.png`。編集時はアップロード画像がパス入力に優先 |
 | B-P09 | 動画 URL は http/https と500文字以下だけ検証。YouTube ドメイン限定なし、空による削除なし |
 
-根拠: `tenant.py:roster_rows,next_player_id,load_player_shell`、`routes/misc.py`、`routes/player_detail.py`、`routes/game_detail.py`。
+根拠: `repositories/players.py:roster_rows,next_player_id`、`services/player_view.py:load_player_shell`、`routes/players.py`・`routes/abilities.py`・`routes/meeting.py`、`routes/player_detail.py`、`routes/game_detail.py`。
 
 ## 日程・出欠
 
@@ -52,7 +52,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 | B-S13 | 日程回答者設定 `people` にはログイン必須。他の日程 action には API 内のログイン必須チェックなし |
 | B-S14 | 画面の午前人数は終日+午前、午後人数は終日+午後。7人・9人は表示基準 |
 
-根拠: `schedule_poll.py`、`routes/schedule.py`、`static/schedule_board.js`。クライアントはブラウザのローカル日付で表示期間を決めるため、ブラウザのタイムゾーンが日本以外だとサーバーの期間判定とずれる場合があります。
+根拠: `scheduling/`、`routes/schedule.py`、`static/schedule_board.js`。クライアントはブラウザのローカル日付で表示期間を決めるため、ブラウザのタイムゾーンが日本以外だとサーバーの期間判定とずれる場合があります。
 
 ## イベント
 
@@ -68,7 +68,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 | B-E08 | 確定は `confirmed=true`。確定解除の action はなく、確定後も更新・回答を禁止するサーバー制約はない |
 | B-E09 | イベントの `player_id` 指定回答は名簿 ID を検証。`person_id` 指定ではカスタム回答者リストを検証。自由入力は名簿名一致またはゲスト ID を使用 |
 
-根拠: `schedule_poll.py:apply_event_*`、`routes/events.py`。
+根拠: `scheduling/events.py:apply_event_*`、`routes/events.py`。
 
 ## 成績集計
 
@@ -103,7 +103,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 
 投手指標は `pitchers.py` で小数2桁に丸めます。一般的な指標と同じ名称でも、この実装では WHIP・K/BB に死球を含めます。投手名単位で集計し、投手の勝敗・セーブ・完封は現在加算しません。
 
-旧キャッシュの出塁率は `(安打 + 四死球) / 打席` であり、上記の新試合集計の式とは異なります。結果コードの安打・打数判定も処理間で差があります。根拠: `annual_tables.py`、`current_year.py`、`pitchers.py`、`teamstats.py`、`stats/batting_count.py`。
+旧キャッシュの出塁率は `(安打 + 四死球) / 打席` であり、上記の新試合集計の式とは異なります。結果コードの安打・打数判定も処理間で差があります。根拠: `stats/annual_tables.py`、`current_year.py`、`pitchers.py`、`teamstats.py`、`stats/batting_count.py`。
 
 ### 直近の調子
 
@@ -118,7 +118,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 | 0.100未満 | 絶不調 |
 | 有効打数なし | データなし。日程画面の名簿表示では普通に補正 |
 
-根拠: `routes/player_detail_form.py`、`routes/schedule.py:_roster_conditions`。JSON 生成時の `stats/recent_form.py` とは別処理です。
+根拠: `stats/player_form.py`、`routes/schedule.py:_roster_conditions`。JSON 生成時の `stats/recent_form.py` とは別処理です。
 
 ## 能力値
 
@@ -183,7 +183,7 @@ Cookie は署名検証と期限検証を行います。個人の選手 ID とロ
 
 `t_sayonara` は選手詳細・能力一覧では `qual_sayonara` の定性フラグから設定します。特殊能力種類を追加する管理画面はありますが、追加種類のすべてが選手詳細の固定表示順へ自動追加される実装ではありません。
 
-根拠: `stats/ability_ranks.py:apply_plate_abilities,apply_steal_rank,apply_run_rank,lit_special_abilities`、`routes/player_detail.py`、`routes/misc.py`。
+根拠: `stats/ability_ranks.py:apply_plate_abilities,apply_steal_rank,apply_run_rank,lit_special_abilities`、`routes/player_detail.py`、`routes/players.py`・`routes/abilities.py`・`routes/meeting.py`。
 
 ## キャッシュ・保存の整合性
 

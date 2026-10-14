@@ -1,5 +1,5 @@
 import pandas as pd
-from webapp.tenant import pa_per_game
+from webapp.teams.context import pa_per_game
 from webapp.data import get_cleaned_df, load_players_df
 
 
@@ -20,7 +20,7 @@ def prepare_frames():
             game_df = game_df[game_df['result'].astype(str).str.strip() != '']
 
         ensure_cols = [
-            'game_type', 'batting_order', 'fielding_position', 'direction', 'runner', 
+            'game_type', 'batting_order', 'fielding_position', 'direction', 'runner',
             'strikes', 'is_official', 'is_4th_bat', 'vs_left', 'sayonara', 'result',
             'sb', 'runs', 'rbi', 'errors', 'gidp', 'bases', 'is_hr', 'advancing_runner', 'multi_hit'
         ]

@@ -59,7 +59,7 @@ erDiagram
 | `reqAb` | integer | 作成時2。同上 |
 | `ability_kinds` | array of map | 特殊能力種類 `{key, label}`。既定は `qual_sayonara` / サヨナラ男 |
 
-根拠: `webapp/tenant.py:_load_teams`、`create_team.py`、`routes/regulation.py`、`routes/qualitative_abilities.py`。
+根拠: `webapp/teams/context.py:_load_teams`、`create_team.py`、`routes/regulation.py`、`routes/qualitative_abilities.py`。
 
 ## 新 DB: teams/{team_id}/players
 

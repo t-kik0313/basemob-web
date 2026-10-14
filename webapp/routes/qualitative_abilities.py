@@ -5,7 +5,9 @@ from flask import redirect, render_template, request, url_for
 from webapp import app
 from webapp.firebase import db
 from webapp.stats.ability_ranks import flag_on
-from webapp.tenant import current_team, players_ref, roster_rows
+from webapp.teams.context import current_team
+from webapp.repositories.references import players_ref
+from webapp.repositories.players import roster_rows
 
 
 def _ability_kinds():

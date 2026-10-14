@@ -5,10 +5,11 @@ from flask import render_template, request, redirect, url_for
 from webapp import app
 from webapp.config import BASE_DIR
 from webapp.firebase import db, db_old
-from webapp.tenant import current_slug, games_ref
+from webapp.teams.context import current_slug
+from webapp.repositories.references import games_ref
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
-from webapp.routes.game_detail_batters import build_batters
+from webapp.stats.game_batters import build_batters
 
 IMAGE_EXTS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -59,28 +60,28 @@ def game_detail(game_id):
         # DBから試合データを取得
         game_ref = games_ref().document(game_id)
         doc_snap = game_ref.get()
-        
+
         if not doc_snap.exists:
             return "試合が見つかりません", 404
-            
+
         game_data = doc_snap.to_dict()
         game_data['id'] = doc_snap.id
-        
+
         # ▼▼▼ 投手データの取得 ▼▼▼
         pitchers_docs = game_ref.collection('pitchers').stream()
         pitchers_data = [doc.to_dict() for doc in pitchers_docs]
         pitchers = pitchers_data if pitchers_data else game_data.get('pitchers', [])
-        
+
         for p in pitchers:
             total_outs = int(p.get('outs', p.get('out', 0)))
             full_innings = total_outs // 3
             leftover_outs = total_outs % 3
             p['display_innings'] = f"{full_innings}.{leftover_outs}"
-        
+
         game_data['youtube_id'] = _youtube_id(game_data.get('youtube_url'))
         batters = build_batters(game_data)
         return render_template('game_detail.html', game=game_data, batters=batters, pitchers=pitchers)
-        
+
     except Exception as e:
         import traceback
         print(f"❌ 試合詳細データの取得エラー:")

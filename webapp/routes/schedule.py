@@ -3,28 +3,23 @@ import traceback
 from flask import g, jsonify, render_template, request
 
 from webapp import app
-from webapp.routes.player_detail_form import build_form_summary
-from webapp.routes.player_detail_records import collect_detail_records
-from webapp.schedule_poll import (
-    PollError,
-    answer_people_view,
-    apply_add,
-    apply_answer,
-    apply_answer_people,
-    apply_board_member_answer,
-    apply_guest_answer,
-    apply_clear_game,
-    apply_game,
-    apply_remove,
-    japan_today,
-)
-from webapp.tenant import plain_name, read_poll, roster_rows, update_poll
+from webapp.stats.player_form import build_form_summary
+from webapp.services.player_records import collect_detail_records
+from webapp.scheduling.common import PollError
+from webapp.scheduling.people import answer_people_view, apply_answer_people
+from webapp.scheduling.days import apply_add, apply_remove
+from webapp.scheduling.answers import apply_answer, apply_board_member_answer, apply_guest_answer
+from webapp.scheduling.games import apply_clear_game, apply_game
+from webapp.scheduling.dates import japan_today
+from webapp.teams.context import plain_name
+from webapp.repositories.schedule import read_poll, update_poll
+from webapp.repositories.players import roster_rows
 
 CONDITION_LABELS = ('絶好調', '好調', '普通', '不調', '絶不調')
 
 
 def _roster_conditions(players):
-    from webapp.tenant import games_ref
+    from webapp.repositories.references import games_ref
 
     conditions = {}
     try:

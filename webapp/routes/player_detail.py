@@ -2,13 +2,14 @@ from flask import jsonify, render_template, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
-from webapp.tenant import load_player_shell, players_ref
+from webapp.services.player_view import load_player_shell
+from webapp.repositories.references import players_ref
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
-from webapp.routes.player_detail_form import build_form_summary
-from webapp.routes.player_detail_records import collect_detail_records
+from webapp.stats.player_form import build_form_summary
+from webapp.services.player_records import collect_detail_records
 from webapp.data import load_merged_data
-from webapp.routes.current_year_records import collect_season
+from webapp.services.season_records import collect_season
 from webapp.stats.ability_power import apply_season_meet, current_season_regulation_pa
 from webapp.stats.ability_ranks import (
     apply_meeting_run_rank,
@@ -24,7 +25,7 @@ def player_detail_R1(player_id):
     player = load_player_shell(player_id)
     if not player:
         return "Player not found", 404
-    
+
     # 🌟 名前の空白を消去して比較用ネームを作る
     target_name = str(player.get('name', '')).replace(" ", "").replace("　", "")
     target_id = str(player_id)

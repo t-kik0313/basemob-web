@@ -89,8 +89,8 @@ def _resolve_player_id(player, roster_names):
 
 def load_current_season(players=None):
     """今年度の試合ごとの打席から、選手ごとの試合数・打席・打率を集める。"""
-    from webapp.tenant import pa_per_game
-    from webapp.routes.current_year_records import PLATE_RESULT_MAP, extend_plate_records, iter_numbered_games
+    from webapp.teams.context import pa_per_game
+    from webapp.services.season_records import PLATE_RESULT_MAP, extend_plate_records, iter_numbered_games
 
     roster_names = _roster_ids(players)
     buckets = {}
@@ -160,7 +160,7 @@ def ability_power(p_data, box, frames):
     if p_games_count > 5:
         if dist > 0: calc_power = int(max(0, min(100, round((min(100, dist) - 20) + (hrs * 2)))))
         else:
-            calc_power = 50 
+            calc_power = 50
             if not l_row.empty and 'slg' in l_row.columns:
                 l_slg = safe_float(l_row.iloc[0].get('slg'))
                 if slg_std > 0 and l_slg > 0:

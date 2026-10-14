@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
-from webapp.tenant import games_ref as team_games
+from webapp.repositories.references import games_ref as team_games
 from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
@@ -34,24 +34,24 @@ def teamstats():
         # --- B. 2026年以降のデータをFirestoreから集計 ---
         # 🌟 注意: ここが 'RYUNEN' になっています。アプリのTEAM IDと一致しているか確認！
         games_ref = team_games().stream()
-        
+
         fetch_count = 0
         newest_game_year = None
         for doc in games_ref:
             g = doc.to_dict()
             fetch_count += 1
-            
+
             g_date = g.get('date', '2026-01-01')
             g_year = str(g_date)[:4]
             if g_year.isdigit() and int(g_year) >= 2026:
                 if newest_game_year is None or g_year > newest_game_year:
                     newest_game_year = g_year
-            
+
             print(f"  ⚾ 取得した試合: {g_date} vs {g.get('opponent', '不明')} (属性: {g.get('gameType', '')})")
 
             if int(g_year) < 2026: continue
             if f_year and g_year != f_year: continue
-            
+
             g_type_val = str(g.get('gameType', g.get('tournament', '')))
             if f_type and f_type not in g_type_val: continue
 
@@ -60,15 +60,15 @@ def teamstats():
                     'year': g_year, 'games': 0, 'wins': 0, 'losses': 0, 'draws': 0,
                     'runs': 0, 'runs_allowed': 0, 'hits': 0, 'ab': 0, 'hr': 0, 'sb': 0, 'er': 0, 'outs': 0
                 }
-            
+
             ys = yearly_stats[g_year]
             ys['games'] += 1
-            
+
             res = g.get('result', 'D')
             if res == 'W': ys['wins'] += 1
             elif res == 'L': ys['losses'] += 1
             else: ys['draws'] += 1
-            
+
             # 🌟 どんな値（空欄・文字）が入っていても絶対にエラーを起こさない魔法
             def safe_int(v):
                 if v in [None, ""]: return 0
@@ -88,12 +88,12 @@ def teamstats():
                                 try: return int(float(val))
                                 except: pass
                         return 0
-                    
+
                     p_ab = get_val('AB', 'ab', 'at_bats')
                     p_h = get_val('H', 'h', 'hits', 'hit')
                     p_hr = get_val('HR', 'hr', 'homeruns', 'home_runs')
                     p_sb = get_val('SB', 'sb', 'stolen_bases', 'steal')
-                    
+
                     m_ab, m_h, m_hr = 0, 0, 0
                     actions_raw = p.get('actions', p.get('atBats', p.get('details', [])))
                     if actions_raw:
@@ -104,7 +104,7 @@ def teamstats():
                             if act_raw and act_raw not in ['四球', '死球', '犠打', '犠飛']: m_ab += 1
                             if '本' in act_raw or 'HR' in act_raw.upper(): m_hr += 1; m_h += 1
                             elif '安' in act_raw or 'ヒット' in act_raw or 'H' in act_raw.upper(): m_h += 1
-                    
+
                     ys['ab'] += max(p_ab, m_ab)
                     ys['hits'] += max(p_h, m_h)
                     ys['hr'] += max(p_hr, m_hr)

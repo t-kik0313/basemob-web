@@ -2,7 +2,7 @@ from flask import redirect, render_template, request, url_for
 
 from webapp import app
 from webapp.firebase import db
-from webapp.tenant import current_team, pa_per_game
+from webapp.teams.context import current_team, pa_per_game
 
 
 def parse_pa_coef(raw):

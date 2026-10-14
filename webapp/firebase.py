@@ -22,5 +22,5 @@ except Exception as e:
 
 
 def team_games():
-    from webapp.tenant import games_ref
+    from webapp.repositories.references import games_ref
     return games_ref()

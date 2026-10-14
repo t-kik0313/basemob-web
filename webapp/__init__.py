@@ -18,7 +18,9 @@ from webapp.routes import (  # noqa: E402,F401
     current_year,
     player_detail,
     records,
-    misc,
+    abilities,
+    players,
+    meeting,
     games,
     teamstats,
     history,
@@ -32,5 +34,5 @@ from webapp.routes import (  # noqa: E402,F401
     csv_data,
 )
 
-from webapp.tenant import install_team_urls  # noqa: E402
+from webapp.teams.urls import install_team_urls
 install_team_urls(app)

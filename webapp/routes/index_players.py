@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for
 import traceback
 from webapp import app
-from webapp.tenant import roster_rows
+from webapp.repositories.players import roster_rows
 
 
 @app.route('/')
@@ -14,7 +14,7 @@ def players():
         players_list = roster_rows()
         print(f"--- 🎉 処理完了！ {len(players_list)} 人の選手データをHTMLに渡します ---")
         return render_template('players.html', players=players_list)
-        
+
     except Exception as e:
         import traceback
         print("❌❌❌ 選手一覧の取得エラー ❌❌❌")

@@ -85,9 +85,9 @@ def ability_ranks(p_data, box, frames):
         p_data['t_nebari'] = p_data['t_katame'] = p_data['t_manrui'] = p_data['t_bunt'] = p_data['t_sayonara'] = False
 
     p_data.update({
-        'games': int(p_games_count), 'pa': int(pa), 'ab': int(ab), 'hits': int(hits), 'hr': int(hrs), 
-        'bb': int(bb), 'so': int(so), 'avg': float(avg), 'slg': float(slg), 'obp': float(obp), 
-        'ops': float(obp + slg), 'sb': int(sb), 'runs': int(runs), 'rbi': int(rbi), 'errors': int(errors), 
+        'games': int(p_games_count), 'pa': int(pa), 'ab': int(ab), 'hits': int(hits), 'hr': int(hrs),
+        'bb': int(bb), 'so': int(so), 'avg': float(avg), 'slg': float(slg), 'obp': float(obp),
+        'ops': float(obp + slg), 'sb': int(sb), 'runs': int(runs), 'rbi': int(rbi), 'errors': int(errors),
         'gidp': int(gidp), 'sh': int(sh), 'sf': int(sf)
     })
 

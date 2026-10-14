@@ -24,7 +24,7 @@ flowchart TB
     geo["国土地理院 住所検索 API"]
 
     subgraph server["BaseMob Web / Python・Flask"]
-        auth["チーム URL の解決・認証<br/>tenant.py / auth.py"]
+        auth["チーム URL の解決・認証<br/>teams/ / auth.py"]
         routes["画面・JSON API<br/>webapp/routes/"]
         view["Jinja2 テンプレート<br/>templates/ + static/"]
         stats["成績集計・能力値計算<br/>webapp/stats/"]
@@ -173,22 +173,31 @@ basemob-web/
 ├── requirements.txt        # Python 依存パッケージ
 ├── webapp/
 │   ├── __init__.py         # Flask 初期化・ルート登録
-│   ├── config.py           # パス・集計係数・認証関連の設定
 │   ├── auth.py             # チーム認証・Cookie
-│   ├── tenant.py           # チーム別 URL・Firestore 参照
+│   ├── config.py           # パス・集計係数・認証関連の設定
 │   ├── firebase.py         # 新旧 Firestore 接続
 │   ├── data.py             # データ取得・DataFrame 整形
-│   ├── schedule_poll.py    # 日程・イベント・出欠の処理
+│   ├── teams/              # チーム解決・URL 接頭辞
+│   ├── repositories/       # Firestore 参照・名簿・予定保存
+│   ├── services/           # 選手データ合成・試合記録取得
+│   ├── scheduling/         # 日付・回答者・日程・試合カード・イベント
 │   ├── routes/             # 画面・API のルート
-│   ├── stats/              # 成績・能力値の計算と JSON キャッシュ
-│   ├── create_team.py      # チーム作成用 CLI
-│   └── migrate_team.py     # 既存チーム専用の移行処理
-├── templates/              # Jinja2 テンプレート・画面部品
-├── static/                 # CSS・JavaScript・画像
+│   ├── stats/              # 成績・能力値計算と JSON キャッシュ
+│   ├── tenant.py           # 旧 import パスの互換入口
+│   ├── schedule_poll.py    # 旧 import パスの互換入口
+│   ├── create_team.py      # 旧チーム作成コマンドの互換入口
+│   └── migrate_team.py     # 旧移行コマンドの互換入口
+├── scripts/                # CSV 取り込み・チーム作成・移行・JS 結合
+├── tests/                  # 模擬 DB による互換性テスト
+├── templates/parts/        # 役割名を付けた Jinja2 画面部品
+├── static/
+│   ├── js/schedule/        # 日程 JavaScript の編集元
+│   └── schedule_board.js   # ブラウザが読む結合済みファイル
+├── 01.doc/design/          # 設計書
 ├── players_data.json       # 集計キャッシュ
 ├── *.csv                   # 取り込み用・参照用のローカルデータ
-├── migrate.py              # CSV → 新 Firestore の取り込み
-├── upload_csv.py           # CSV → 旧 Firestore の年度成績再取り込み
+├── migrate.py              # 旧 CSV 取り込みコマンドの互換入口
+├── upload_csv.py           # 旧年度成績取り込みコマンドの互換入口
 └── backups/                # チーム移行前のバックアップ
 ```
 
@@ -233,4 +242,21 @@ git push origin main
 | 過去成績・能力値が表示されない | 旧 DB のデータ、集計キャッシュ、`debug_log.txt` を確認する。空の新チームには過去データは自動作成されない |
 | 画像やキャッシュを保存できない | プロジェクト直下と `static/` 配下の書き込み権限を確認する |
 
-このリポジトリには自動テストや本番デプロイの設定は含まれていません。
+本番デプロイの設定は含まれていません。
+
+
+## 開発時の確認
+
+日程 JavaScript は `static/js/schedule/` を編集し、次のコマンドで既存の配信ファイルを更新します。結合済みの `static/schedule_board.js` もリポジトリに含めるため、通常の起動にビルド操作は不要です。
+
+```bash
+python scripts/build_schedule_js.py
+```
+
+仮想環境を有効化して、互換性テストを実行できます。テストでは模擬 DB を使い、実 Firestore や認証鍵へアクセスしません。
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+運用処理の実装は `scripts/` に移しています。既存の `python migrate.py`、`python upload_csv.py`、`python -m webapp.create_team`、`python -m webapp.migrate_team` も引き続き使用できます。分割内容は [構成変更の対応表](01.doc/design/structure.md) を参照してください。
