@@ -1,6 +1,7 @@
+from webapp.presentation import page_route, screen_response
 import uuid
 
-from flask import redirect, render_template, request, url_for
+from flask import redirect, request, url_for
 
 from webapp import app
 from webapp.firebase import db
@@ -36,7 +37,7 @@ def _player_rows(kinds):
     return rows
 
 
-@app.route('/admin/qualitative_abilities', methods=['GET', 'POST'])
+@page_route('/admin/qualitative_abilities', methods=['GET', 'POST'])
 def qualitative_abilities():
     kinds = _ability_kinds()
     if request.method == 'POST':
@@ -55,7 +56,7 @@ def qualitative_abilities():
                 player_id = str(player['player_id'])
                 players_ref().document(player_id).set({key: player_id in selected}, merge=True)
         return redirect(url_for('qualitative_abilities'))
-    return render_template(
+    return screen_response(
         'qualitative_abilities.html',
         players=_player_rows(kinds),
         abilities=kinds,

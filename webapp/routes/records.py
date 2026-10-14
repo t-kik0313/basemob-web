@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response, action_route
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -6,15 +7,15 @@ from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
 
-@app.route('/input_form_R1/<int:player_id>')
+@page_route('/input_form_R1/<int:player_id>')
 def input_form_R1(player_id):
     players_df = load_players_df()
     player = players_df[players_df['player_id'] == player_id].iloc[0].to_dict()
     player['id'] = player_id
     player['player_id'] = player_id
-    return render_template('input_form_R1.html', player=player)
+    return screen_response('input_form_R1.html', player=player)
 
-@app.route('/save_record/<int:player_id>', methods=['POST'])
+@action_route('/save_record/<int:player_id>', methods=['POST'])
 def save_record(player_id):
     game_date = request.form.get('game_date')
     game_id = request.form.get('game_id')
@@ -60,7 +61,7 @@ def save_record(player_id):
 
 
 
-@app.route('/update_game_record/<int:player_id>', methods=['POST'])
+@action_route('/update_game_record/<int:player_id>', methods=['POST'])
 def update_game_record(player_id):
     doc_id = request.form.get('csv_index') # FirebaseのIDを受け取る
     update_fields = ['game_date', 'game_id', 'result', 'direction', 'runner', 'strikes',
@@ -79,7 +80,7 @@ def update_game_record(player_id):
     update_json_from_csv()
     return redirect(url_for('player_detail_R1', player_id=player_id))
 
-@app.route('/delete_game_record/<int:player_id>/<string:csv_index>', methods=['POST'])
+@action_route('/delete_game_record/<int:player_id>/<string:csv_index>', methods=['POST'])
 def delete_game_record(player_id, csv_index):
     if db is not None:
         db.collection('game_records').document(str(csv_index)).delete()

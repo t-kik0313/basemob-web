@@ -10,6 +10,8 @@ import sys
 import types
 import unittest
 from unittest.mock import patch
+from io import BytesIO
+from tempfile import TemporaryDirectory
 
 from werkzeug.security import generate_password_hash
 
@@ -123,7 +125,10 @@ class RefactorCompatibilityTests(unittest.TestCase):
             "api_events", "api_events_post", "events", "qualitative_abilities",
             "regulation_settings", "csv_data", "static",
         }
-        self.assertEqual({rule.endpoint for rule in app.url_map.iter_rules()}, expected)
+        actual = {rule.endpoint for rule in app.url_map.iter_rules()}
+        self.assertEqual({name for name in actual if not name.startswith(("screen_api_", "action_api_"))}, expected)
+        self.assertEqual(sum(name.startswith("screen_api_") for name in actual), 18)
+        self.assertEqual(sum(name.startswith("action_api_") for name in actual), 5)
 
     def test_member_authentication(self):
         self.assertEqual(self.client.get("/t/demo/players").status_code, 401)
@@ -131,8 +136,12 @@ class RefactorCompatibilityTests(unittest.TestCase):
             "/t/demo/players", auth=("demo-login", "test-only-password")
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("選手A", response.get_data(as_text=True))
+        self.assertIn("/static/app/app.js", response.get_data(as_text=True))
+        self.assertNotIn("選手A", response.get_data(as_text=True))
         self.assertIn("team_login=", response.headers["Set-Cookie"])
+        response.close()
+        data = self.client.get("/t/demo/api/screens/players")
+        self.assertEqual(data.json["data"]["players"][0]["name"], "選手A")
 
     def test_unprefixed_redirect_keeps_query(self):
         response = self.client.get(
@@ -144,7 +153,9 @@ class RefactorCompatibilityTests(unittest.TestCase):
     def test_public_pages(self):
         for path in ("schedule", "events"):
             with self.subTest(path=path):
-                self.assertEqual(self.client.get(f"/t/demo/{path}").status_code, 200)
+                response = self.client.get(f"/t/demo/{path}")
+                self.assertEqual(response.status_code, 200)
+                response.close()
 
     def test_public_api_response_shapes(self):
         schedule = self.client.get("/t/demo/api/schedule")
@@ -189,9 +200,77 @@ class RefactorCompatibilityTests(unittest.TestCase):
         }).status_code, 400)
 
     def test_template_compilation(self):
-        for name in app.jinja_env.list_templates():
-            with self.subTest(template=name):
-                app.jinja_env.get_template(name)
+        sources = json.loads((ROOT / "static/app/views.json").read_text())
+        self.assertEqual(sum("/" not in name for name in sources), 18)
+        self.assertTrue(all(name.endswith(".njk") for name in sources))
+
+    def test_public_screen_data_and_private_data(self):
+        for name in ("schedule", "events"):
+            response = self.client.get(f"/t/demo/api/screens/{name}")
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.json["meta"]["logged_in"])
+            self.assertNotIn("password_hash", response.get_data(as_text=True))
+        self.assertEqual(self.client.get("/t/demo/api/screens/players").status_code, 401)
+
+    def test_form_api_redirect_and_validation(self):
+        response = self.client.post("/t/demo/api/screens/register_player", data={
+            "name": "", "number": "", "throw_hand": "右", "bat_hand": "右",
+        }, auth=("demo-login", "test-only-password"))
+        self.assertEqual(response.json["view"], "register.njk")
+        self.assertIn("入力", response.json["data"]["error"])
+        response = self.client.post("/t/demo/api/screens/register_player", data={
+            "name": "選手B", "number": "2", "throw_hand": "右", "bat_hand": "右",
+        })
+        self.assertEqual(response.json, {"redirect": "/t/demo/players"})
+        self.assertEqual(database.documents[("teams", "DEMO", "players", "2")]["name"], "選手B")
+
+    def test_action_api_errors_and_redirect(self):
+        response = self.client.post("/t/demo/api/actions/game/missing/youtube", data={
+            "youtube_url": "https://example.com/video",
+        }, auth=("demo-login", "test-only-password"))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json, {"error": "試合が見つかりません"})
+        database.documents[("teams", "DEMO", "games", "game1")] = {"date": "2026-10-25"}
+        response = self.client.post("/t/demo/api/actions/game/game1/youtube", data={
+            "youtube_url": "https://example.com/video",
+        })
+        self.assertEqual(response.json, {"redirect": "/t/demo/game/game1"})
+
+    def test_all_screen_apis_return_structured_data(self):
+        from screen_fixtures import SCREEN_PATHS, install, restore
+        originals = install(database, FIXTURES)
+        try:
+            for path in SCREEN_PATHS:
+                with self.subTest(path=path):
+                    response = self.client.get("/t/demo/api/screens" + path,
+                                               auth=("demo-login", "test-only-password"))
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(set(response.json), {"view", "data", "meta"})
+                    self.assertNotIn("html", response.json)
+                    self.assertNotIn("password_hash", response.get_data(as_text=True))
+        finally:
+            restore(originals)
+
+    def test_upload_action_api(self):
+        database.documents[("teams", "DEMO", "games", "game1")] = {"date": "2026-10-25"}
+        with TemporaryDirectory() as directory:
+            with patch("webapp.routes.game_detail.BASE_DIR", directory):
+                response = self.client.post("/t/demo/api/actions/game/game1/scoreboard_image",
+                    data={"scoreboard_image": (BytesIO(b"test-image"), "score.png")},
+                    content_type="multipart/form-data", auth=("demo-login", "test-only-password"))
+                self.assertEqual(response.json, {"redirect": "/t/demo/game/game1"})
+                self.assertTrue((Path(directory) / "static/scoreboard_images/demo/game1.png").exists())
+
+    def test_screen_errors_are_json(self):
+        response = self.client.get("/t/demo/api/screens/player_detail_R1/999",
+                                  auth=("demo-login", "test-only-password"))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json, {"error": "Player not found"})
+        with patch("webapp.routes.current_year.load_player_shell", side_effect=RuntimeError("test failure")):
+            with self.assertLogs(app.logger, level="ERROR"):
+                response = self.client.get("/t/demo/api/screens/current_year_stats/1")
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.json, {"error": "データの読み込み・保存に失敗しました。"})
 
     def test_date_windows_and_game_normalization(self):
         self.assertEqual(poll.window_end(date(2026, 12, 14)), date(2027, 1, 31))

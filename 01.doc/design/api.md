@@ -4,9 +4,9 @@
 
 ## 共通仕様
 
-ベースパスは `/t/{slug}`。以下のパスにこの接頭辞を付けます。パラメーター `{player_id}` は Flask の integer converter、`{game_id}` は文字列です。JSON API と HTML フォーム処理の両方を記載します。
+ベースパスは `/t/{slug}`。以下のパスにこの接頭辞を付けます。パラメーター `{player_id}` は Flask の integer converter、`{game_id}` は文字列です。既存 JSON API とフォームの業務処理を記載します。全画面のデータ取得・フォーム API の新しい経路は [API＋JS の画面構成](api-client.md) を参照します。
 
-JSON API の入力は `Content-Type: application/json`。フォームは `application/x-www-form-urlencoded`、画像を含むものは `multipart/form-data`。フォーム保存の成功は原則302です。画面を取得する GET は [画面定義](screens.md) を参照します。
+JSON API の入力は `Content-Type: application/json`。フォームは `application/x-www-form-urlencoded`、画像を含むものは `multipart/form-data`。API 経由のフォーム保存は200 JSON の redirect で移動先を返します。以下のフォーム定義にある302は従来処理が生成する内部のリダイレクトを示し、新しい API はこれを JSON に変換します。画面を取得する GET は [画面定義](screens.md) を参照します。
 
 認証は HTTP Basic または署名付き `team_login` Cookie。Bearer トークン方式ではありません。認証フックが返す401は HTML/テキストと `WWW-Authenticate` を伴い、API の JSON エラーとは形式が異なります。チーム接頭辞なしの経路は認証後302になるため、クライアントはチーム別 URL を指定してください。
 
@@ -199,7 +199,7 @@ JSON API の入力は `Content-Type: application/json`。フォームは `applic
 | F-08 | POST `/update_game_record/{player_id}` | csv_index、打席更新項目・チェック項目 | 選手詳細へ302 |
 | F-09 | POST `/delete_game_record/{player_id}/{csv_index}` | URLの文書ID、ボディ不要 | 選手詳細へ302 |
 
-フォームの入力検証は [画面定義](screens.md) と [業務ルール](business-rules.md) を参照します。保存・ファイル I/O 等の例外には統一ハンドラーがありません。
+フォームの入力検証は [画面定義](screens.md) と [業務ルール](business-rules.md) を参照します。新しい画面・フォーム API では例外を捕捉し500 JSON を返します。既存 JSON API の例外処理は従来どおりです。
 
 ### F-07 従来打席保存の詳細
 

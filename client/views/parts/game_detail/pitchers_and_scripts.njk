@@ -1,0 +1,106 @@
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pitcher-tab" class="tab-content">
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th class="player-name-col">選手名</th>
+                        <th>投球回</th><th>被安打</th><th>被本塁打</th><th>四死球</th>
+                        <th>奪三振</th><th>失点</th><th>自責点</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pitchers %}
+                    <tr>
+                        <td class="player-name-col">{{ p.name }}</td>
+                        <td>{{ p.get('display_innings', p.get('innings', 0)) }}</td>
+                        <td>{{ p.get('hits', p.get('H', p.get('h', 0))) }}</td>
+                        <td>{{ p.get('hr', p.get('HR', p.get('homeruns', 0))) }}</td>
+                        <td>{{ p.get('bb', p.get('BB', 0))|int + p.get('hbp', p.get('HBP', 0))|int }}</td>
+                        <td>{{ p.get('so', p.get('k', p.get('SO', p.get('K', p.get('strike_outs', 0))))) }}</td>
+                        <td>{{ p.get('runs', p.get('R', p.get('r', p.get('scores', 0)))) }}</td>
+                        <td>{{ p.get('er', p.get('ER', p.get('earned_runs', 0))) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" style="padding: 20px;">投手データがありません</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function openYoutubeBox() {
+            var box = document.getElementById('youtube-box');
+            box.style.display = 'flex';
+            var input = box.querySelector('input[name="youtube_url"]');
+            input.focus();
+        }
+
+        function previewScoreboardImage(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var img = document.getElementById('scoreboard-preview');
+            var label = document.getElementById('scoreboard-preview-label');
+            img.src = URL.createObjectURL(file);
+            img.style.display = 'block';
+            label.style.display = 'block';
+            input.form.requestSubmit();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 歯車ボタンで表示・編集を切り替える
+        function toggleEditMode(isEdit) {
+            // スコアボードの切り替え
+            document.getElementById('scoreboard-view').style.display = isEdit ? 'none' : 'block';
+            document.getElementById('scoreboard-edit').style.display = isEdit ? 'block' : 'none';
+            
+            // ★ 守備位置、失策、そして打撃成績すべてを同時に切り替える
+            document.querySelectorAll('.def-err-view, .def-pos-view, .stat-view').forEach(el => el.style.display = isEdit ? 'none' : 'inline');
+            document.querySelectorAll('.def-err-edit, .def-pos-edit, .stat-edit').forEach(el => el.style.display = isEdit ? 'inline-block' : 'none');
+        }
+
+        // スコアボードの自動計算
+        function calcTotal() {
+            let myTotal = 0;
+            document.querySelectorAll('.my-score').forEach(el => {
+                if (el.value) myTotal += parseInt(el.value, 10);
+            });
+            document.getElementById('total-mine').innerText = myTotal;
+
+            let oppTotal = 0;
+            document.querySelectorAll('.opp-score').forEach(el => {
+                if (el.value) oppTotal += parseInt(el.value, 10);
+            });
+            document.getElementById('total-opponent').innerText = oppTotal;
+        }
+
+        function toggleTeamRows() {
+            const order = document.getElementById('battingOrder').value;
+            const tbody = document.getElementById('scoreTableBody');
+            const rowMine = document.getElementById('row-mine');
+            const rowOpp = document.getElementById('row-opponent');
+
+            if (order === 'top') {
+                tbody.insertBefore(rowMine, rowOpp);
+            } else {
+                tbody.insertBefore(rowOpp, rowMine);
+            }
+        }
+
+        // 画面を開いた瞬間に計算と並び替えを実行
+        document.addEventListener('DOMContentLoaded', () => {
+            calcTotal();
+            toggleTeamRows();
+        });
+    </script>
+</body>
+</html>

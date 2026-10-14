@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -7,7 +8,7 @@ from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
 
-@app.route('/games')
+@page_route('/games')
 def games():
     try:
         # DBから全試合データを取得（正しい住所）
@@ -107,7 +108,7 @@ def games():
         # 日付が新しい順（降順）に並び替え
         games_list = sorted(games_list, key=lambda x: x.get('date', '0000-00-00'), reverse=True)
 
-        return render_template('games.html', games=games_list, selected_year=selected_year)
+        return screen_response('games.html', games=games_list, selected_year=selected_year)
 
     except Exception as e:
         import traceback

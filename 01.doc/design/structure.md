@@ -2,7 +2,7 @@
 
 [設計書トップ](README.md)
 
-本変更は既存処理の配置・分割・ファイル名を整理したものです。URL、endpoint 名、認証・権限、入力検証、成績の計算式、Firestore の読取・書込先、ローカルファイルの保存先を維持します。設計書に記載した現行の制約・不整合も、今回の構成変更では修正していません。
+この章は既存処理の配置・分割・ファイル名の整理を記録します。その後の API＋JS 移行は [API＋JS の画面構成](api-client.md) を参照してください。URL、endpoint 名、認証・権限、入力検証、成績の計算式、Firestore の読取・書込先、ローカルファイルの保存先を維持します。設計書に記載した現行の制約・不整合も、今回の構成変更では修正していません。
 
 ## Python の分割先
 
@@ -66,9 +66,9 @@ CSV 取り込みの BASE_DIR はリポジトリ直下を維持します。年度
 
 ## テンプレート
 
-`templates/parts/` の数字ファイル名を内容に応じた名称へ変更しました。例: `pc_profile_and_abilities.html`、`mobile_profile_and_navigation.html`、`pitcher_table.html`、`monthly_chart.html`。既存の部品境界と include 順は維持します。タグ・CSS・JavaScript の途中で分かれる既存部品もあるため、ファイル単独での描画は想定しません。
+旧 `templates/parts/` の数字ファイル名を内容に応じた名称へ変更しました。例: `pc_profile_and_abilities.html`、`mobile_profile_and_navigation.html`、`pitcher_table.html`、`monthly_chart.html`。既存の部品境界と include 順は維持します。タグ・CSS・JavaScript の途中で分かれる既存部品もあるため、ファイル単独での描画は想定しません。API＋JS 移行後は `client/views/parts/` の `.njk` ファイルとしてブラウザが利用します。
 
-## 検証
+## ファイル分割時の検証
 
 - 既存196関数・クラスの処理を、import の移動を除いて AST 比較し、一致を確認。
 - 日程 JavaScript の関数処理と初期化文の順序を AST 比較し、一致を確認。

@@ -1,9 +1,9 @@
-from flask import render_template
+from webapp.presentation import page_route, screen_response
 from webapp import app
 from webapp.data import load_merged_data
 
-@app.route('/record_summary')
+@page_route('/record_summary')
 def record_summary():
     merged = load_merged_data()
     records = merged.to_dict(orient='records') if not merged.empty else []
-    return render_template('record_summary.html', records=records)
+    return screen_response('record_summary.html', records=records)

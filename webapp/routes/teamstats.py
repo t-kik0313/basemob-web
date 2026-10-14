@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -7,7 +8,7 @@ from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
 
-@app.route('/teamstats')
+@page_route('/teamstats')
 def teamstats():
     from flask import request
     try:
@@ -126,7 +127,7 @@ def teamstats():
             ys['era'] = (ys['er'] * 21) / ys['outs'] if ys['outs'] > 0 else 0.0
             team_stats_list.append(ys)
 
-        return render_template('teamstats.html', stats=team_stats_list, request=request, newest_game_year=newest_game_year)
+        return screen_response('teamstats.html', stats=team_stats_list, request=request, newest_game_year=newest_game_year)
     except Exception as e:
         import traceback; traceback.print_exc()
         return "エラーが発生しました", 500

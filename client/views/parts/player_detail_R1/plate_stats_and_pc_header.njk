@@ -1,0 +1,47 @@
+
+{% if records|length %}
+    {% set hit_results = ['H', '1B', '2B', '3B', 'HR', '単打', '2BH', '3BH', '本塁打'] %}
+    {% set ab_results = ['H', '1B', '2B', '3B', 'HR', 'O', 'E', 'FC', 'K', '単打', '2BH', '3BH', '本塁打', 'ゴロ', 'フライ', 'ライナー', '三振', '失策出塁', '野手選択', '併殺'] %}
+
+    {% for r in records %}
+        {% set res = r.result|string %}
+        {% set is_ab = res in ab_results %}
+        {% set is_h = res in hit_results %}
+        {% set is_hr = res in ['HR', '本塁打'] %}
+
+        {% if is_ab %}
+            {% set _ = setAttr(st, "total_ab", st.total_ab + 1) %}
+            {% if is_h %}{% set _ = setAttr(st, "total_h", st.total_h + 1) %}{% endif %}
+            {% if is_hr %}{% set _ = setAttr(st, "total_hr", st.total_hr + 1) %}{% endif %}
+
+            {% set d = r.direction|string|replace('.0', '') %}
+            {% if d in ['5', '6', '7', '三', '遊', '左'] %}
+                {% set _ = setAttr(st, "dir_left_ab", st.dir_left_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "dir_left_h", st.dir_left_h + 1) %}{% endif %}
+            {% elif d in ['1', '2', '8', '投', '捕', '中'] %}
+                {% set _ = setAttr(st, "dir_center_ab", st.dir_center_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "dir_center_h", st.dir_center_h + 1) %}{% endif %}
+            {% elif d in ['3', '4', '9', '一', '二', '右'] %}
+                {% set _ = setAttr(st, "dir_right_ab", st.dir_right_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "dir_right_h", st.dir_right_h + 1) %}{% endif %}
+            {% endif %}
+
+            {% set run = r.runner|string|replace('.0', '')|replace('，', ',')|replace('、', ',')|trim %}
+            {% if run in ['なし', '0', '無', '無走者'] %}{% set _ = setAttr(st, "run0_ab", st.run0_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run0_h", st.run0_h + 1) %}{% endif %}
+            {% elif run in ['1', '1塁'] %}{% set _ = setAttr(st, "run1_ab", st.run1_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run1_h", st.run1_h + 1) %}{% endif %}
+            {% elif run in ['2', '2塁'] %}{% set _ = setAttr(st, "run2_ab", st.run2_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run2_h", st.run2_h + 1) %}{% endif %}
+            {% elif run in ['3', '3塁'] %}{% set _ = setAttr(st, "run3_ab", st.run3_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run3_h", st.run3_h + 1) %}{% endif %}
+            {% elif run in ['1.2', '1,2', '1,2塁', '1・2', '1・2塁'] %}{% set _ = setAttr(st, "run12_ab", st.run12_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run12_h", st.run12_h + 1) %}{% endif %}
+            {% elif run in ['1.3', '1,3', '1,3塁', '1・3', '1・3塁'] %}{% set _ = setAttr(st, "run13_ab", st.run13_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run13_h", st.run13_h + 1) %}{% endif %}
+            {% elif run in ['2.3', '2,3', '2,3塁', '2・3', '2・3塁'] %}{% set _ = setAttr(st, "run23_ab", st.run23_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "run23_h", st.run23_h + 1) %}{% endif %}
+            {% elif run in ['F', '満塁', '満'] %}{% set _ = setAttr(st, "runF_ab", st.runF_ab + 1) %}{% if is_h %}{% set _ = setAttr(st, "runF_h", st.runF_h + 1) %}{% endif %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<a href="/" class="back-to-top">◀ トップページへ戻る</a>
+
+<div class="pc-layout">
+    <div class="player-detail-container">
+        <div class="abilities-frame">
+            <div class="player-card-wrapper">
+                <div class="pc-ability-item name-plate" style="top:18px; left:18px; width:190px; height:68px; font-size:3.2rem; font-weight:bold; justify-content:center; color:#000;">
+

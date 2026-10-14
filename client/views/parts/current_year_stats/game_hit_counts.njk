@@ -1,0 +1,14 @@
+    {% for r in records %}
+        {% set res_str = r.result|string %}
+        {% if res_str in hit_results %}
+            {% set gid = r.game_date|string ~ '_' ~ r.game_id|string %}
+            {% set _ = putDict(game_has_hit, gid, true) %}
+            {% if gid in game_hit_counts %}
+                {% set _ = putDict(game_hit_counts, gid, game_hit_counts[gid] + 1) %}
+            {% else %}
+                {% set _ = putDict(game_hit_counts, gid, 1) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+

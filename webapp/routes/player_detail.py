@@ -1,4 +1,5 @@
-from flask import jsonify, render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import jsonify, request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -20,7 +21,7 @@ from webapp.stats.ability_ranks import (
 )
 
 
-@app.route('/player_detail_R1/<int:player_id>')
+@page_route('/player_detail_R1/<int:player_id>')
 def player_detail_R1(player_id):
     player = load_player_shell(player_id)
     if not player:
@@ -41,7 +42,7 @@ def player_detail_R1(player_id):
     player['t_sayonara'] = _flag_on(player.get('qual_sayonara'))
     active_skills = lit_special_abilities(player)
 
-    return render_template('player_detail_R1.html',
+    return screen_response('player_detail_R1.html',
                            player=player,
                            active_skills=active_skills,
                            records=records,

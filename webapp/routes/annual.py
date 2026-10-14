@@ -1,6 +1,7 @@
+from webapp.presentation import page_route, screen_response
 import math
 
-from flask import render_template, request, redirect, url_for
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -13,7 +14,7 @@ from webapp.stats.annual_tables import build_annual_tables
 from webapp.stats.annual_tally import tally_games
 
 
-@app.route('/annual_stats_detail')
+@page_route('/annual_stats_detail')
 def annual_stats_detail():
     try:
         print("--- ⚾ 今年度の成績集計を開始します ---")
@@ -35,7 +36,7 @@ def annual_stats_detail():
         tally_games(loaded_games, player_stats, get_players_data_json(), RESULT_MAP)
         stats_list, team_total = build_annual_tables(player_stats, regulation_pa, roster_rows())
 
-        return render_template(
+        return screen_response(
             'annual_stats_detail.html',
             stats=stats_list,
             team_total=team_total,

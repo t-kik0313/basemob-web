@@ -1,6 +1,7 @@
+from webapp.presentation import page_route, screen_response
 import traceback
 
-from flask import g, jsonify, render_template, request
+from flask import g, jsonify, request
 
 from webapp import app
 from webapp.scheduling.common import PollError
@@ -117,7 +118,7 @@ def api_events_post():
     return jsonify(_events_payload(poll, rows))
 
 
-@app.route('/events')
+@page_route('/events')
 def events():
     public = bool(getattr(g, 'public_view', False))
     rows = roster_rows()
@@ -126,4 +127,4 @@ def events():
         for row in rows
         if row.get('name')
     ]
-    return render_template('events.html', logged_in=not public, roster=roster)
+    return screen_response('events.html', logged_in=not public, roster=roster)

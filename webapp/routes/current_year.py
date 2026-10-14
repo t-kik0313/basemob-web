@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -9,7 +10,7 @@ from webapp.stats.current_year_game import absorb_game
 from webapp.services.season_records import PLATE_RESULT_MAP, extend_plate_records, iter_numbered_games
 
 
-@app.route('/current_year_stats/<int:player_id>')
+@page_route('/current_year_stats/<int:player_id>')
 def current_year_stats(player_id):
     player = load_player_shell(player_id)
     if not player:
@@ -55,4 +56,4 @@ def current_year_stats(player_id):
 
     current_year_games.sort(key=lambda x: x['date'], reverse=True)
 
-    return render_template('current_year_stats.html', player=player, records=records)
+    return screen_response('current_year_stats.html', player=player, records=records)

@@ -1,0 +1,5 @@
+    {% for gid, count_h in game_hit_counts.items() %}
+        {% if count_h >= 2 %}{% set _ = setAttr(multi_hit_games, "count", multi_hit_games.count + 1) %}{% endif %}
+    {% endfor %}
+
+

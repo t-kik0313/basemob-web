@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -7,7 +8,7 @@ from webapp.data import get_cleaned_df, load_players_df, load_merged_data
 from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 
 
-@app.route('/pitchers')
+@page_route('/pitchers')
 def pitchers():
     try:
         print("--- ⚾ 投手成績データの取得を開始します ---")
@@ -81,12 +82,12 @@ def pitchers():
             pitchers_list.append(stats)
 
         print(f"--- 🎉 処理完了！ {len(pitchers_list)} 人の投手データをHTMLに渡します ---")
-        return render_template('pitchers.html', pitchers=pitchers_list)
+        return screen_response('pitchers.html', pitchers=pitchers_list)
 
     except Exception as e:
         import traceback
         print("❌❌❌ 投手成績の取得・計算中に重大なエラーが発生しました ❌❌❌")
         print(f"エラー内容: {e}")
         traceback.print_exc() # エラーの詳しい原因を表示
-        return render_template('pitchers.html', pitchers=[])
+        return screen_response('pitchers.html', pitchers=[])
 

@@ -1,6 +1,7 @@
+from webapp.presentation import page_route, screen_response
 import traceback
 
-from flask import g, jsonify, render_template, request
+from flask import g, jsonify, request
 
 from webapp import app
 from webapp.stats.player_form import build_form_summary
@@ -121,7 +122,7 @@ def api_schedule_poll():
     return jsonify(_schedule_payload(poll, rows))
 
 
-@app.route('/schedule')
+@page_route('/schedule')
 def schedule():
     public = bool(getattr(g, 'public_view', False))
     rows = roster_rows()
@@ -131,7 +132,7 @@ def schedule():
         if row.get('name')
     ]
     conditions = _roster_conditions(rows)
-    return render_template(
+    return screen_response(
         'schedule.html',
         logged_in=not public,
         roster=roster,

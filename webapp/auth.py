@@ -40,7 +40,10 @@ def register_auth(app):
 
     def public_schedule(path):
         path = path.rstrip('/') or '/'
-        if request.method == 'GET' and path in ('/schedule', '/api/schedule', '/events', '/api/events'):
+        if request.method == 'GET' and path in (
+            '/schedule', '/api/schedule', '/events', '/api/events',
+            '/api/screens/schedule', '/api/screens/events',
+        ):
             return True
         return request.method == 'POST' and path in ('/api/schedule/poll', '/api/events')
 

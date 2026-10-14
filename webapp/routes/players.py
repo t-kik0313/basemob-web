@@ -1,5 +1,6 @@
+from webapp.presentation import page_route, screen_response
 import os
-from flask import render_template, request, redirect, url_for
+from flask import request, redirect, url_for
 from webapp import app
 from webapp.config import BASE_DIR
 from webapp.firebase import db
@@ -62,7 +63,7 @@ def _save_player_image(player_id, image):
 
 
 
-@app.route('/register_player', methods=['GET', 'POST'])
+@page_route('/register_player', methods=['GET', 'POST'])
 def register_player():
     form = {'throw_hand': '右', 'bat_hand': '右'}
     if request.method == 'POST':
@@ -79,14 +80,14 @@ def register_player():
             'bat_hand': bat_hand,
         }
         if not name or not number:
-            return render_template('register.html', error='選手名と背番号を入力してください。', form=form)
+            return screen_response('register.html', error='選手名と背番号を入力してください。', form=form)
         if throw_hand not in HANDS or bat_hand not in HANDS:
-            return render_template('register.html', error='投と打は右・左・両から選んでください。', form=form)
+            return screen_response('register.html', error='投と打は右・左・両から選んでください。', form=form)
 
         image = request.files.get('image')
         image_error = _image_error(image)
         if image_error:
-            return render_template('register.html', error=image_error, form=form)
+            return screen_response('register.html', error=image_error, form=form)
 
         new_id = next_player_id()
         image_path = _save_player_image(new_id, image)
@@ -104,7 +105,7 @@ def register_player():
             players_ref().document(str(new_id)).set(new_player, merge=True)
 
         return redirect(url_for('players'))
-    return render_template('register.html', form=form)
+    return screen_response('register.html', form=form)
 
 
 
@@ -133,7 +134,7 @@ def _edit_form_player(player_id, source):
 
 
 
-@app.route('/edit_player/<int:player_id>', methods=['GET', 'POST'])
+@page_route('/edit_player/<int:player_id>', methods=['GET', 'POST'])
 def edit_player(player_id):
     if request.method == 'POST':
         update_data = {}
@@ -147,7 +148,7 @@ def edit_player(player_id):
         if image_error or image_path is None:
             player = _edit_form_player(player_id, request.form)
             message = image_error or '画像パスは static フォルダ内の相対パスにしてください。'
-            return render_template('edit_player.html', player=player, error=message)
+            return screen_response('edit_player.html', player=player, error=message)
 
         if image is not None and image.filename:
             update_data['image_path'] = _save_player_image(player_id, image)
@@ -171,4 +172,4 @@ def edit_player(player_id):
     if not source.get('number'):
         source['number'] = stored.get('no') or source.get('no') or ''
     player = _edit_form_player(player_id, source)
-    return render_template('edit_player.html', player=player)
+    return screen_response('edit_player.html', player=player)

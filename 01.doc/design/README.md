@@ -11,6 +11,7 @@
 | [画面定義・画面遷移](screens.md) | 全登録画面、表示項目、入力項目、保存・キャンセル・エラー時の挙動、遷移図 |
 | [データ・テーブル定義](data-model.md) | Firestore のコレクション、ネスト構造、旧データ、キャッシュ |
 | [ビジネスルール](business-rules.md) | 認証、選手管理、日程・イベント、成績集計、能力値の判定 |
+| [API＋JS の画面構成](api-client.md) | クライアント描画、画面データ API、フォーム API |
 | [構成変更の対応表](structure.md) | 分割先、互換入口、JavaScript の結合方法 |
 | [API・フォーム定義](api.md) | JSON API の action・入力・レスポンス、フォーム更新経路、エラー |
 
@@ -20,13 +21,15 @@
 flowchart TB
     B[ブラウザ] --> T[チーム URL 解決・認証]
     subgraph APP[Python / Flask]
-        T --> R[画面ルート・JSON API]
-        R --> V[Jinja2 / CSS / JavaScript]
+        T --> R[画面入口・JSON API]
+        R --> V[静的 HTML / CSS / JavaScript / 画面定義]
         R --> S[成績集計・能力値計算]
         R --> D[Firestore 接続・データ整形]
         S --> D
     end
     V --> B
+    R -->|JSON| B
+    B --> C[Nunjucks でブラウザ内描画]
     T --> N[(新 Firestore / teams)]
     R --> N
     D --> N
@@ -37,9 +40,9 @@ flowchart TB
     B --> G[国土地理院 住所検索 API]
 ```
 
-`app.py` が開発サーバーを起動し、`webapp/__init__.py` が Flask、認証フック、ルート、チーム URL 用 WSGI ミドルウェアを組み立てます。HTML と JSON API は同じ Flask アプリから配信します。
+`app.py` が開発サーバーを起動し、`webapp/__init__.py` が Flask、認証フック、ルート、チーム URL 用 WSGI ミドルウェアを組み立てます。共通の静的 HTML と JSON API は同じ Flask アプリから配信します。画面ごとの HTML はブラウザ内で生成します。
 
-チーム別 URL は `/t/{slug}/...` です。`TeamPrefix` が接頭辞を外して既存ルートに渡し、`auth.py` が対象チームを解決します。テンプレート内の `url_for` は `teams/urls.py` によりチーム接頭辞を付与します。直接記述された `/games` などのリンクは、認証 Cookie を介したチーム URL へのリダイレクトに依存します。
+チーム別 URL は `/t/{slug}/...` です。`TeamPrefix` が接頭辞を外して既存ルートに渡し、`auth.py` が対象チームを解決します。クライアントテンプレートの `url_for` 相当の処理は `static/app/renderer.js` が API のルート情報を使ってチーム接頭辞を付与します。直接記述された `/games` などのリンクは、認証 Cookie を介したチーム URL へのリダイレクトに依存します。
 
 新 DB はチーム別の名簿・試合・日程と設定を管理します。旧 DB は過去成績・能力計算のデータを供給します。これは完全にチーム分離された一つのデータモデルではなく、移行途中の構成です。
 
@@ -54,10 +57,13 @@ sequenceDiagram
     B->>A: GET /t/{slug}/player_detail_R1/{id}
     A->>N: チーム情報を取得
     A->>A: Basic 認証または署名 Cookie を確認
+    A-->>B: 共通の静的 HTML・JavaScript
+    B->>A: GET /t/{slug}/api/screens/player_detail_R1/{id}
     A->>O: 選手キャッシュ・測定記録を取得
     A->>N: 選手名簿・補正値・試合の打席を取得
     A->>A: 成績・能力値・最近の調子を計算
-    A-->>B: HTML（初回認証時は Cookie を設定）
+    A-->>B: JSON（view・data・meta）
+    B->>B: ブラウザ内でテンプレートを描画
 ```
 
 ```mermaid
@@ -90,7 +96,7 @@ sequenceDiagram
 | K-11 | 認可はチーム共通 | 管理者と一般メンバーを区別するロールはなく、`/admin/` もチームログインと同じ認証 |
 | K-12 | 一部 API の型検証・例外処理が限定的 | 能力更新の JSON が配列等の場合、型次第で500になり得る。フォームの整数変換や配列長にも包括的な検証がない |
 
-これらは確認できた現状です。本設計書の作成ではアプリの動作や権限を変更していません。
+これらは確認できた現状です。API＋JS 移行でも業務の計算式・DB 保存先・公開操作の権限条件は継続しています。通信・描画方式の変更は api-client.md を参照してください。
 
 ## 運用・保守条件
 

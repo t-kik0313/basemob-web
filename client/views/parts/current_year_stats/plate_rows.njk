@@ -1,0 +1,52 @@
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.game_date }}</td><td>{{ r.game_id }}</td>
+                        <td>{{ '公式戦' if r.game_type in ['official', '公式戦'] else ('練習試合' if r.game_type in ['practice', '練習試合'] else r.game_type) }}</td>
+                        <td>{{ r.batting_order|string|replace('.0', '') }}</td>
+                        <td>
+                            {% set res = r.result|string %}
+                            {% if res == 'nan' or res == 'None' %}{% set res = '' %}{% endif %}
+                            
+                            {% set res_color = '#333' %}
+                            {% if res in ['1B', '単打', '2B', '2BH', '二塁打', '3B', '3BH', '三塁打'] %} {% set res_color = '#2563eb' %}
+                            {% elif res in ['HR', '本塁打'] %} {% set res_color = '#ef4444' %}
+                            {% elif res in ['BB', '四球', 'HBP', '死球'] %} {% set res_color = '#16a34a' %}
+                            {% elif res in ['SH', '犠打', 'SF', '犠飛'] %} {% set res_color = '#ca8a04' %}
+                            {% elif res in ['E', '失策出塁', 'FC', '野手選択'] %} {% set res_color = '#ea580c' %}
+                            {% endif %}
+                            
+                            <strong style="color: {{ res_color }};">
+                                {% set legacy_map = {'1B':'単打', '2B':'2塁打', '2BH':'2塁打', '3B':'3塁打', '3BH':'3塁打', 'HR':'本塁打', 'O':'凡退', 'K':'三振', 'BB':'四球', 'HBP':'死球', 'SH':'犠打', 'SF':'犠飛', 'E':'失策出塁', 'FC':'野手選択', 'H':'単打', 'ゴロ':'ゴロ', 'フライ':'フライ', 'ライナー':'ライナー', '併殺打':'併殺打'} %}
+                                {{ legacy_map[res] if res in legacy_map else res }}
+                            </strong>
+                        </td>
+                        <td style="font-weight: bold; color: #555;">
+                            {% set d_raw = r.direction|string %}
+                            {% if d_raw == 'nan' or d_raw == 'None' %}{% set d_raw = '' %}{% endif %}
+                            {% set d = d_raw|replace('.0', '') %}
+                            {% set dir_map = {'1':'投', '2':'捕', '3':'一', '4':'二', '5':'三', '6':'遊', '7':'左', '8':'中', '9':'右', 'なし':''} %}
+                            {% set display_dir = dir_map[d] if d in dir_map else d %}
+                            {{ display_dir if display_dir else '-' }}
+                        </td>
+                        <td>{{ r.runner|string|replace('.0', '') }}</td>
+                        <td>{{ r.strikes|string|replace('.0', '') }}</td>
+                        <td>{{ r.stadium|string|replace('.0', '') }}</td>
+                        <td>{{ '○' if r.advancing_runner|string in ['1', '1.0'] else '' }}</td>
+                        <td>{{ '○' if r.vs_left|string in ['1', '1.0'] else '' }}</td>
+                        
+                        <!-- ★ 自動判定：1試合につき1つだけマルチヒットの〇を付ける -->
+                        {% set gid = r.game_date|string ~ '_' ~ r.game_id|string %}
+                        <td style="text-align: center;">
+                            {% if game_hit_counts.get(gid, 0) >= 2 and not displayed_multi.get(gid) %}
+                                <span style="color:#e74c3c; font-weight:bold; font-size:1.1rem;" title="この試合でマルチヒット達成！">○</span>
+                                {% set _ = putDict(displayed_multi, gid, true) %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

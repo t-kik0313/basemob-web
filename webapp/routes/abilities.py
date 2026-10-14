@@ -1,10 +1,10 @@
-from flask import render_template
+from webapp.presentation import page_route, screen_response
 from webapp import app
 from webapp.repositories.references import players_ref
 from webapp.data import load_merged_data
 from webapp.stats.json_cache import get_players_data_json
 
-@app.route('/pawapuro')
+@page_route('/pawapuro')
 def pawapuro():
     from webapp.services.season_records import collect_season
     from webapp.routes.qualitative_abilities import flag_on
@@ -29,4 +29,4 @@ def pawapuro():
         apply_steal_rank(player, stolen_bases)
         apply_meeting_run_rank(player, meeting_rows)
         player['t_sayonara'] = qualitative.get(str(player.get('player_id')), False)
-    return render_template('pawapuro.html', players_data=players_data)
+    return screen_response('pawapuro.html', players_data=players_data)

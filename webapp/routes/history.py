@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, url_for
+from webapp.presentation import page_route, screen_response
+from flask import request, redirect, url_for
 import traceback
 from webapp import app
 from webapp.firebase import db, db_old
@@ -7,7 +8,7 @@ from webapp.stats.json_cache import get_players_data_json, update_json_from_csv
 from webapp.services.player_history import append_current_season
 
 
-@app.route('/player_history/<int:player_id>')
+@page_route('/player_history/<int:player_id>')
 def player_history(player_id):
     from flask import request
     players_df = load_players_df()
@@ -47,5 +48,5 @@ def player_history(player_id):
     ts['OPS'] = ts['obp'] + ts['slg']
     ts['risp_avg'] = ts['risp_h'] / ts['risp_ab'] if ts['risp_ab'] > 0 else 0.0
 
-    return render_template('player_history.html', player=player, history_stats=history_stats, total_stats=total_stats, request=request)
+    return screen_response('player_history.html', player=player, history_stats=history_stats, total_stats=total_stats, request=request)
 

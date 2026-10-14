@@ -1,4 +1,5 @@
-from flask import redirect, render_template, request, url_for
+from webapp.presentation import page_route, screen_response
+from flask import redirect, request, url_for
 
 from webapp import app
 from webapp.firebase import db
@@ -16,7 +17,7 @@ def parse_pa_coef(raw):
     return round(value, 2)
 
 
-@app.route('/admin/regulation', methods=['GET', 'POST'])
+@page_route('/admin/regulation', methods=['GET', 'POST'])
 def regulation_settings():
     team = current_team()
     error = None
@@ -32,7 +33,7 @@ def regulation_settings():
             return redirect(url_for('regulation_settings', saved=1))
         else:
             error = 'チームを確認できないため、保存できませんでした。'
-    return render_template(
+    return screen_response(
         'regulation.html',
         pa_coef=coef,
         error=error,

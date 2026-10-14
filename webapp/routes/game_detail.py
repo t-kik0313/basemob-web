@@ -1,7 +1,8 @@
+from webapp.presentation import page_route, screen_response, action_route
 import os
 import re
 
-from flask import render_template, request, redirect, url_for
+from flask import request, redirect, url_for
 from webapp import app
 from webapp.config import BASE_DIR
 from webapp.firebase import db, db_old
@@ -54,7 +55,7 @@ def _remove_stored_image(rel):
     os.remove(path)
 
 
-@app.route('/game/<game_id>')
+@page_route('/game/<game_id>')
 def game_detail(game_id):
     try:
         # DBから試合データを取得
@@ -80,7 +81,7 @@ def game_detail(game_id):
 
         game_data['youtube_id'] = _youtube_id(game_data.get('youtube_url'))
         batters = build_batters(game_data)
-        return render_template('game_detail.html', game=game_data, batters=batters, pitchers=pitchers)
+        return screen_response('game_detail.html', game=game_data, batters=batters, pitchers=pitchers)
 
     except Exception as e:
         import traceback
@@ -89,7 +90,7 @@ def game_detail(game_id):
         return "エラーが発生しました", 500
 
 
-@app.route('/game/<game_id>/scoreboard_image', methods=['POST'])
+@action_route('/game/<game_id>/scoreboard_image', methods=['POST'])
 def upload_scoreboard_image(game_id):
     game_ref = _game_ref(game_id)
     if not game_ref.get().exists:
@@ -116,7 +117,7 @@ def upload_scoreboard_image(game_id):
     return redirect(url_for('game_detail', game_id=game_id))
 
 
-@app.route('/game/<game_id>/youtube', methods=['POST'])
+@action_route('/game/<game_id>/youtube', methods=['POST'])
 def save_youtube_link(game_id):
     game_ref = _game_ref(game_id)
     if not game_ref.get().exists:

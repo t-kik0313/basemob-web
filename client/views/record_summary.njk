@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最新記録会成績</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #f4f7f9; color: #333; font-family: 'Inter', Arial, sans-serif; }
+        .container { max-width: 1000px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 32px; position: relative; }
+        h1 { color: #004d99; margin-bottom: 24px; text-align: center; font-size: 1.8rem; font-weight: bold; margin-top: 30px;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { border: 1px solid #ccc; padding: 10px 6px; text-align: center; }
+        th { background: #e5e7eb; color: #004d99; font-weight: bold; }
+        tr:nth-child(even) { background: #f9f9f9; }
+
+        /* ★戻るボタン */
+        .btn-back-container { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+        .btn-back { display: inline-block !important; padding: 8px 16px !important; background: #1a3c8d !important; color: #fff !important; text-decoration: none !important; border-radius: 4px !important; font-weight: bold !important; font-size: 0.85rem !important; border: none !important; cursor: pointer !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; transition: background 0.2s !important; }
+        .btn-back:hover { background: #122b66 !important; }
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 15px; }
+            h1 { font-size: 1.4rem !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen">
+
+    {% macro display_val(v) -%}
+        {%- set v_str = v|string|trim -%}
+        {%- if v_str|lower == 'nan' or v_str == '' or v_str == 'none' -%}
+            -
+        {%- else -%}
+            {{ v_str }}
+        {%- endif -%}
+    {%- endmacro %}
+
+    {% macro display_time(v) -%}
+        {%- set v_str = v|string|trim -%}
+        {%- if v_str|lower == 'nan' or v_str == '' or v_str == 'none' -%}
+            -
+        {%- else -%}
+            {{ "%.2f"|format(v_str|float) }}
+        {%- endif -%}
+    {%- endmacro %}
+
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="{{ url_for('players') }}" class="btn-back">◀ トップページへ戻る</a>
+            <button onclick="window.history.back();" class="btn-back">◀ 選手詳細へ戻る</button>
+        </div>
+
+        <h1>最新記録会成績</h1>
+        
+        <div class="table-container" style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>選手名</th>
+                        <th>記録日</th>
+                        <th>遠投距離[m]</th>
+                        <th>置きティー距離[m]</th>
+                        <th>1塁駆け抜け[秒]</th>
+                        <th>ベーラン1周[秒]</th>
+                        <th>球速[km/h]</th>
+                        </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td style="font-weight: bold;">{{ display_val(record.name) }}</td>
+                        <td>{{ display_val(record.record_date) }}</td>
+                        <td>{{ display_val(record.throw_distance) }}</td>
+                        <td>{{ display_val(record.batting_distance) }}</td>
+                        <td>{{ display_time(record.run_short) }}</td>
+                        <td>{{ display_time(record.run_long) }}</td>
+                        <td>{{ display_val(record.pitch_speed) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if not records %}
+            <div class="mt-12 p-8 bg-white border border-dashed border-gray-300 rounded-xl text-center">
+                <p class="text-xl font-medium text-gray-500">
+                    現在、記録サマリーのデータがありません。
+                </p>
+                <a href="{{ url_for('register_player') }}" class="mt-4 inline-block bg-indigo-500 text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-600 transition duration-300 shadow-lg">
+                    選手を登録する
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

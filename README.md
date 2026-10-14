@@ -1,6 +1,6 @@
 # BaseMob Web
 
-野球チームの選手、試合結果、個人成績、能力値、日程・イベントの出欠を管理する Web アプリです。Python / Flask で画面と API を提供し、Cloud Firestore にチームごとのデータを保存します。
+野球チームの選手、試合結果、個人成績、能力値、日程・イベントの出欠を管理する Web アプリです。Python / Flask が JSON API と静的ファイルを提供し、ブラウザの JavaScript が画面を描画します。Cloud Firestore にチームごとのデータを保存します。
 
 画面定義・画面遷移・データ定義・ビジネスルール・API 定義は [設計書](01.doc/design/README.md) を参照してください。
 
@@ -19,14 +19,14 @@
 
 ```mermaid
 flowchart TB
-    browser["ブラウザ"]
+    browser["ブラウザ<br/>JavaScript / Nunjucks で画面描画"]
     score["外部スコア入力アプリ<br/>Firebase Hosting"]
     geo["国土地理院 住所検索 API"]
 
     subgraph server["BaseMob Web / Python・Flask"]
         auth["チーム URL の解決・認証<br/>teams/ / auth.py"]
-        routes["画面・JSON API<br/>webapp/routes/"]
-        view["Jinja2 テンプレート<br/>templates/ + static/"]
+        routes["画面入口・JSON API<br/>webapp/routes/ + presentation/"]
+        view["静的 HTML・CSS・JS・画面定義<br/>static/app/ + static/vendor/"]
         stats["成績集計・能力値計算<br/>webapp/stats/"]
         data["Firestore 接続・データ整形<br/>firebase.py / data.py"]
         files["ローカルファイル<br/>集計 JSON・画像・ログ"]
@@ -38,6 +38,7 @@ flowchart TB
     browser -->|HTTP| auth
     auth --> routes
     routes --> view
+    routes -->|JSON データ| browser
     view -->|HTML・CSS・JavaScript| browser
     routes --> stats
     routes --> data
@@ -76,8 +77,8 @@ flowchart TB
 
 | 用途 | 技術 |
 | --- | --- |
-| Web サーバー・画面生成 | Flask 3.0.3 / Jinja2 |
-| フロントエンド | HTML / CSS / JavaScript |
+| Web サーバー・JSON API | Flask 3.0.3 |
+| フロントエンド・画面生成 | HTML / CSS / JavaScript / Nunjucks 3.2.4 |
 | データベース接続 | Firebase Admin SDK / Cloud Firestore |
 | 成績集計 | pandas 2.2.3 / NumPy 2.1.2 |
 | 認証 | HTTP Basic 認証、itsdangerous による署名付き Cookie、Werkzeug のパスワードハッシュ |
@@ -181,7 +182,8 @@ basemob-web/
 │   ├── repositories/       # Firestore 参照・名簿・予定保存
 │   ├── services/           # 選手データ合成・試合記録取得
 │   ├── scheduling/         # 日付・回答者・日程・試合カード・イベント
-│   ├── routes/             # 画面・API のルート
+│   ├── presentation/       # 静的シェル・画面データ API・JSON 変換
+│   ├── routes/             # 画面入口・API のルート
 │   ├── stats/              # 成績・能力値計算と JSON キャッシュ
 │   ├── tenant.py           # 旧 import パスの互換入口
 │   ├── schedule_poll.py    # 旧 import パスの互換入口
@@ -189,8 +191,10 @@ basemob-web/
 │   └── migrate_team.py     # 旧移行コマンドの互換入口
 ├── scripts/                # CSV 取り込み・チーム作成・移行・JS 結合
 ├── tests/                  # 模擬 DB による互換性テスト
-├── templates/parts/        # 役割名を付けた Jinja2 画面部品
+├── client/views/           # ブラウザで描画する Nunjucks 画面・部品
 ├── static/
+│   ├── app/                # 画面起動・API 通信・描画・画面定義 JSON
+│   ├── vendor/             # 同梱 Nunjucks とライセンス
 │   ├── js/schedule/        # 日程 JavaScript の編集元
 │   └── schedule_board.js   # ブラウザが読む結合済みファイル
 ├── 01.doc/design/          # 設計書
@@ -253,10 +257,31 @@ git push origin main
 python scripts/build_schedule_js.py
 ```
 
+画面のテンプレートは `client/views/` を編集し、配信用 JSON を更新します。
+
+```bash
+python scripts/build_client_views.py
+```
+
 仮想環境を有効化して、互換性テストを実行できます。テストでは模擬 DB を使い、実 Firestore や認証鍵へアクセスしません。
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
+JavaScript の描画テストは Node.js で実行します（起動には Node.js は不要です）。
+
+```bash
+node tests/test_client.cjs
+```
+
 運用処理の実装は `scripts/` に移しています。既存の `python migrate.py`、`python upload_csv.py`、`python -m webapp.create_team`、`python -m webapp.migrate_team` も引き続き使用できます。分割内容は [構成変更の対応表](01.doc/design/structure.md) を参照してください。
+
+
+## API＋JavaScript の画面構成
+
+全18画面は共通の静的 HTML を取得した後、`/t/{slug}/api/screens/{画面パス}` から JSON を取得し、ブラウザ内で画面を組み立てます。サーバーは個々の画面の HTML を生成しません。フォーム保存と画像送信も API を使用します。
+
+画面 URL と認証方式、成績計算、DB の保存先は継続しています。画面遷移は既存 URL への通常の遷移を使い、移動先で再び API から描画します。JavaScript が必要です。
+
+詳しい経路・レスポンス・更新方法は [API＋JS の画面構成](01.doc/design/api-client.md) を参照してください。Nunjucks の固定バージョンとライセンスは `static/vendor/` に同梱しています。

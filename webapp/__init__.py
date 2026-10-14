@@ -5,7 +5,7 @@ from webapp.config import BASE_DIR
 
 app = Flask(
     __name__,
-    template_folder=os.path.join(BASE_DIR, 'templates'),
+    template_folder=None,
     static_folder=os.path.join(BASE_DIR, 'static'),
 )
 app.logger.setLevel(logging.DEBUG)
