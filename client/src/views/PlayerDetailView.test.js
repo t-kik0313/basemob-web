@@ -8,6 +8,7 @@ it('旧画面の PC・モバイル補正を同期し、ポイント超過を拒�
   const router=createRouter({history:createMemoryHistory(),routes:[{path:'/t/:teamSlug/player_detail_R1/:playerId',component:PlayerDetailView}]});await router.push('/t/demo/player_detail_R1/1');await router.isReady();
   const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({ok:true})});vi.stubGlobal('fetch',fetchMock);
   const wrapper=mount(PlayerDetailView,{props:{data:{player:{player_id:1,name:'選手A',age:26,meet_val:70,power_val:70,speed_val:60,arm_val:60,defense_val:50,catch_val:50},active_skills:[],records:[]}},global:{plugins:[createPinia(),router],stubs:{RecentForm:true}}});
+  expect(wrapper.text()).not.toContain('トップページへ戻る');
   expect(wrapper.findAll('.ability-slider')).toHaveLength(12);expect(wrapper.find('.ability-slider').element.disabled).toBe(true);
   await wrapper.find('[aria-label="能力補正を編集"]').trigger('click');
   await wrapper.find('.ability-slider').setValue('4');

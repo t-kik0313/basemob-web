@@ -32,7 +32,6 @@ async function saveAbilities() {const result=await save('/api/update_abilities',
 </script>
 <template>
   <div class="player-detail-page">
-    <RouterLink :to="prefix+'/players'" class="back-to-top">◀ トップページへ戻る</RouterLink>
     <FormStatus :error="error" :message="message" />
     <div class="pc-layout">
       <div class="player-detail-container">
@@ -58,7 +57,6 @@ async function saveAbilities() {const result=await save('/api/update_abilities',
       </div>
     </div>
     <div class="mobile-layout"><div class="mob-container">
-      <RouterLink :to="prefix+'/players'" class="mob-back-nav">◀ トップページへ戻る</RouterLink>
       <div class="mob-header-row"><div class="mob-name-block"><span class="name-fill" :style="{backgroundImage:gradient}"/><span class="name-letters">{{ firstName }}</span></div><div class="mob-logo-block"><img :src="'/static/uniform.jpeg'" alt="ユニフォーム"></div><div class="mob-number-block">{{ player.number }}</div></div>
       <div class="mob-pos-row"><span class="mob-label-pill">守備位置</span><span class="mob-pos-val">{{ [player.pos1,player.pos2,player.pos3].filter(Boolean).join(' ') }}</span></div>
       <div class="mob-photo-block"><img class="detail-player-photo" :src="staticImage(player.image_path)" :alt="player.name"></div>
